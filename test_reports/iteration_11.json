@@ -1,0 +1,73 @@
+{
+  "summary": "Iteration 11: Tested new Document Backup feature. All 10 backend tests passed. Both endpoints (GET /api/backup/documents and POST /api/backup/documents/import) working correctly. Frontend UI verified - 'Dokumente sichern' section displays correctly on /backup page with export and import buttons.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration11_documents_backup.py",
+    "/app/test_reports/pytest/pytest_results_iter11.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_iteration11_documents_backup.py"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10 pytest tests passed)",
+    "frontend": "100% (all UI elements verified via Playwright)"
+  },
+  "test_credentials": {
+    "admin_email": "marc.hansen@canusa.de",
+    "admin_password": "CanusaNexus2024!",
+    "note": "Test users prefixed with test_iter11_ were cleaned up after tests"
+  },
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Document backup feature fully working. ZIP export contains only documents with valid file_path (some older documents may not have valid paths on disk). Import correctly skips existing documents.",
+  "features_verified": {
+    "documents_backup_export": {
+      "status": "VERIFIED",
+      "endpoint": "GET /api/backup/documents",
+      "notes": "Downloads ZIP file with documents/[filename].pdf and manifest.json. Admin only. Returns 404 if no documents have valid file paths."
+    },
+    "documents_backup_import": {
+      "status": "VERIFIED",
+      "endpoint": "POST /api/backup/documents/import",
+      "notes": "Imports ZIP backup. Skips existing files. Validates ZIP format. Admin only."
+    },
+    "frontend_documents_section": {
+      "status": "VERIFIED",
+      "component": "Backup.jsx",
+      "notes": "New 'Dokumente sichern' section with export ZIP button and import file picker."
+    }
+  },
+  "api_tests_performed": {
+    "documents_export_admin_success": "GET /api/backup/documents as admin returns 200 with ZIP file",
+    "documents_export_viewer_forbidden": "GET /api/backup/documents as viewer returns 403",
+    "documents_export_no_auth": "GET /api/backup/documents without auth returns 401",
+    "documents_import_valid_zip": "POST /api/backup/documents/import with valid ZIP returns 200",
+    "documents_import_non_zip_file": "POST /api/backup/documents/import with non-ZIP returns 400",
+    "documents_import_corrupt_zip": "POST /api/backup/documents/import with corrupt ZIP returns 400",
+    "documents_import_viewer_forbidden": "POST /api/backup/documents/import as viewer returns 403",
+    "documents_import_no_auth": "POST /api/backup/documents/import without auth returns 401",
+    "documents_import_empty_zip": "POST /api/backup/documents/import with empty ZIP returns 200 (imports 0)",
+    "documents_export_import_cycle": "Export->Import cycle works, existing documents skipped"
+  },
+  "ui_tests_performed": {
+    "backup_page_navigation": "Backup link visible in sidebar for admin, page loads correctly",
+    "backup_page_stats": "Database statistics displayed (7 Artikel, 9 Kategorien, 13 Benutzer, 7 Dokumente)",
+    "dokumente_sichern_section": "'Dokumente sichern' card visible with info box",
+    "export_documents_button": "'Dokumente als ZIP herunterladen' button visible and enabled",
+    "import_documents_input": "Hidden file input for ZIP import present",
+    "zip_import_button": "'ZIP importieren' button visible",
+    "info_box_content": "Info box shows: PDF-Dokumente and manifest.json items"
+  },
+  "notes": "Some documents in DB have no valid file_path (older uploads where PDF was deleted). The export endpoint correctly handles this by only including documents with existing files on disk. Currently 1 document (test_upload.pdf) has a valid file path and is included in ZIP export."
+}

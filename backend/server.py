@@ -1195,6 +1195,168 @@ async def export_backup(user: User = Depends(get_current_user)):
         }
     )
 
+@api_router.get("/backup/documents")
+async def export_documents_backup(user: User = Depends(get_current_user)):
+    """Export all uploaded documents as ZIP backup (admin only)"""
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Nur Administratoren können Dokument-Backups erstellen")
+    
+    from fastapi.responses import StreamingResponse
+    import zipfile
+    import io
+    import json
+    
+    # Get all documents with file paths
+    documents = await db.documents.find({}, {"_id": 0}).to_list(1000)
+    
+    if not documents:
+        raise HTTPException(status_code=404, detail="Keine Dokumente zum Exportieren vorhanden")
+    
+    # Create ZIP in memory
+    zip_buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        # Add manifest file with metadata
+        manifest = {
+            "version": "2.0.0",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_by": user.email,
+            "documents": []
+        }
+        
+        files_added = 0
+        for doc in documents:
+            file_path = doc.get("file_path") or doc.get("temp_path")
+            
+            if file_path and os.path.exists(file_path):
+                # Add file to ZIP with original filename
+                original_name = doc.get("filename", f"{doc['document_id']}.pdf")
+                zip_path = f"documents/{original_name}"
+                
+                # Handle duplicate filenames
+                counter = 1
+                base_name = original_name.rsplit('.', 1)[0] if '.' in original_name else original_name
+                ext = original_name.rsplit('.', 1)[1] if '.' in original_name else 'pdf'
+                while zip_path in [info.filename for info in zip_file.filelist]:
+                    zip_path = f"documents/{base_name}_{counter}.{ext}"
+                    counter += 1
+                
+                zip_file.write(file_path, zip_path)
+                files_added += 1
+                
+                # Add to manifest
+                manifest["documents"].append({
+                    "document_id": doc.get("document_id"),
+                    "filename": doc.get("filename"),
+                    "original_filename": original_name,
+                    "zip_path": zip_path,
+                    "uploaded_by": doc.get("uploaded_by"),
+                    "created_at": doc.get("created_at"),
+                    "file_size": doc.get("file_size")
+                })
+        
+        manifest["total_files"] = files_added
+        
+        # Add manifest as JSON file
+        manifest_json = json.dumps(manifest, ensure_ascii=False, indent=2, default=json_serializer)
+        zip_file.writestr("manifest.json", manifest_json)
+    
+    if files_added == 0:
+        raise HTTPException(status_code=404, detail="Keine Dokument-Dateien gefunden")
+    
+    zip_buffer.seek(0)
+    
+    # Generate filename with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"canusa_nexus_documents_{timestamp}.zip"
+    
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    )
+
+@api_router.post("/backup/documents/import")
+async def import_documents_backup(
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user)
+):
+    """Import documents from ZIP backup (admin only)"""
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Nur Administratoren können Dokument-Backups importieren")
+    
+    import zipfile
+    import io
+    import json
+    
+    if not file.filename.endswith('.zip'):
+        raise HTTPException(status_code=400, detail="Bitte eine ZIP-Datei hochladen")
+    
+    content = await file.read()
+    zip_buffer = io.BytesIO(content)
+    
+    results = {"imported": 0, "skipped": 0, "errors": 0}
+    
+    try:
+        with zipfile.ZipFile(zip_buffer, 'r') as zip_file:
+            # Read manifest
+            manifest = None
+            if "manifest.json" in zip_file.namelist():
+                manifest_data = zip_file.read("manifest.json")
+                manifest = json.loads(manifest_data.decode('utf-8'))
+            
+            # Create upload directory
+            os.makedirs("/tmp/pdfs", exist_ok=True)
+            
+            # Extract and import documents
+            for file_info in zip_file.filelist:
+                if file_info.filename.startswith("documents/") and not file_info.is_dir():
+                    original_name = file_info.filename.replace("documents/", "")
+                    
+                    # Check if document already exists
+                    existing = await db.documents.find_one({"filename": original_name})
+                    if existing:
+                        results["skipped"] += 1
+                        continue
+                    
+                    try:
+                        # Extract file
+                        file_content = zip_file.read(file_info.filename)
+                        doc_id = f"doc_{uuid.uuid4().hex[:12]}"
+                        file_path = f"/tmp/pdfs/{doc_id}.pdf"
+                        
+                        with open(file_path, "wb") as f:
+                            f.write(file_content)
+                        
+                        # Create document record
+                        doc_record = {
+                            "document_id": doc_id,
+                            "filename": original_name,
+                            "status": "completed",
+                            "file_path": file_path,
+                            "file_size": len(file_content),
+                            "uploaded_by": user.user_id,
+                            "created_at": datetime.now(timezone.utc).isoformat(),
+                            "imported_from_backup": True
+                        }
+                        
+                        await db.documents.insert_one(doc_record)
+                        results["imported"] += 1
+                        
+                    except Exception as e:
+                        logger.error(f"Failed to import document {original_name}: {e}")
+                        results["errors"] += 1
+    
+    except zipfile.BadZipFile:
+        raise HTTPException(status_code=400, detail="Ungültige ZIP-Datei")
+    
+    return {
+        "message": "Dokument-Import abgeschlossen",
+        "results": results
+    }
+
 class BackupImportRequest(BaseModel):
     backup_data: Dict[str, Any]
     import_articles: bool = True

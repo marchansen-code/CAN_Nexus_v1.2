@@ -15,7 +15,8 @@ import {
   FileText,
   FolderTree,
   RefreshCw,
-  Info
+  Info,
+  FileArchive
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,11 +37,15 @@ import {
 const Backup = () => {
   const { user } = useContext(AuthContext);
   const fileInputRef = useRef(null);
+  const docFileInputRef = useRef(null);
   
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [exportingDocs, setExportingDocs] = useState(false);
+  const [importingDocs, setImportingDocs] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [docImportResult, setDocImportResult] = useState(null);
   
   // Import settings
   const [importFile, setImportFile] = useState(null);
@@ -102,6 +107,77 @@ const Backup = () => {
       toast.error("Backup konnte nicht erstellt werden");
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleExportDocuments = async () => {
+    setExportingDocs(true);
+    try {
+      const response = await axios.get(`${API}/backup/documents`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `canusa_nexus_documents_${new Date().toISOString().slice(0,10)}.zip`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename=(.+)/);
+        if (match) filename = match[1];
+      }
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Dokumente-Backup erfolgreich erstellt");
+    } catch (error) {
+      console.error("Documents export failed:", error);
+      if (error.response?.status === 404) {
+        toast.error("Keine Dokumente zum Exportieren vorhanden");
+      } else {
+        toast.error("Dokumente-Backup konnte nicht erstellt werden");
+      }
+    } finally {
+      setExportingDocs(false);
+    }
+  };
+
+  const handleDocFileSelect = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!file.name.endsWith('.zip')) {
+      toast.error("Bitte eine ZIP-Datei auswählen");
+      return;
+    }
+    
+    setImportingDocs(true);
+    setDocImportResult(null);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await axios.post(`${API}/backup/documents/import`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      setDocImportResult(response.data);
+      toast.success("Dokumente erfolgreich importiert");
+      fetchStats();
+    } catch (error) {
+      console.error("Documents import failed:", error);
+      toast.error(error.response?.data?.detail || "Dokumente-Import fehlgeschlagen");
+    } finally {
+      setImportingDocs(false);
+      if (docFileInputRef.current) {
+        docFileInputRef.current.value = '';
+      }
     }
   };
 
@@ -295,6 +371,102 @@ const Backup = () => {
               </>
             )}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Documents Backup Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileArchive className="w-5 h-5" />
+            Dokumente sichern
+          </CardTitle>
+          <CardDescription>
+            Exportiert alle hochgeladenen PDF-Dokumente als ZIP-Datei
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-4 bg-violet-50 dark:bg-violet-950 border border-violet-200 dark:border-violet-800 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-violet-500 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-violet-700 dark:text-violet-300">Was wird gesichert?</p>
+                <ul className="mt-1 text-violet-600 dark:text-violet-400 space-y-1">
+                  <li>• Alle hochgeladenen PDF-Dokumente</li>
+                  <li>• manifest.json mit Metadaten (Dateiname, Upload-Datum, etc.)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              onClick={handleExportDocuments} 
+              disabled={exportingDocs || stats?.documents === 0}
+              className="bg-violet-500 hover:bg-violet-600"
+              data-testid="export-documents-btn"
+            >
+              {exportingDocs ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Wird erstellt...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Dokumente als ZIP herunterladen
+                </>
+              )}
+            </Button>
+            
+            <div className="relative">
+              <input
+                ref={docFileInputRef}
+                type="file"
+                accept=".zip"
+                onChange={handleDocFileSelect}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                data-testid="import-documents-input"
+                disabled={importingDocs}
+              />
+              <Button 
+                variant="outline"
+                disabled={importingDocs}
+                className="pointer-events-none"
+              >
+                {importingDocs ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Wird importiert...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    ZIP importieren
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+          
+          {/* Document Import Result */}
+          {docImportResult && (
+            <div className="p-4 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-emerald-500 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-emerald-700 dark:text-emerald-300">Dokumente importiert</p>
+                  <div className="mt-1 text-emerald-600 dark:text-emerald-400">
+                    <p>• {docImportResult.results.imported} importiert</p>
+                    <p>• {docImportResult.results.skipped} übersprungen (bereits vorhanden)</p>
+                    {docImportResult.results.errors > 0 && (
+                      <p className="text-red-600">• {docImportResult.results.errors} Fehler</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
