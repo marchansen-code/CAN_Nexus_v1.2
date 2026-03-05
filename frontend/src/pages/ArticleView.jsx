@@ -275,15 +275,6 @@ const ArticleView = () => {
           {article.title}
         </h1>
 
-        {/* Summary */}
-        {article.summary && (
-          <div className="bg-slate-50 dark:bg-slate-900 border-l-4 border-canusa-red p-4 rounded-r-lg mb-6">
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              {article.summary}
-            </p>
-          </div>
-        )}
-
         {/* Author & Date Info */}
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
           <div className="flex items-center gap-1.5">

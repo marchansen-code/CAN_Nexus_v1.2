@@ -50,3 +50,19 @@ export async function removeEmergentBadge(page: Page) {
     if (badge) badge.remove();
   });
 }
+
+export async function insertMention(page: Page, searchQuery: string) {
+  const editor = page.locator('.ProseMirror');
+  await editor.click();
+  await page.keyboard.type(`@${searchQuery}`);
+  
+  // Wait for dropdown
+  const dropdown = page.locator('.tippy-box, [data-tippy-root]').first();
+  await dropdown.waitFor({ state: 'visible', timeout: 5000 });
+  
+  // Click first result
+  await dropdown.locator('button').first().click();
+  
+  // Wait for mention to be inserted
+  await editor.locator('.mention-link, a[data-mention]').first().waitFor({ state: 'visible', timeout: 3000 });
+}

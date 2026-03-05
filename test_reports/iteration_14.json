@@ -1,0 +1,92 @@
+{
+  "summary": "Iteration 14: Successfully tested @-Mention (Article Linking) feature and verified Zusammenfassung field removal from ArticleView. All 8 backend tests and 23 frontend tests passed.",
+  "mode": "generate",
+  "baseline_commit": "c5c6d1e051e2a1b37b535e0e29a16b8e4263a19d",
+  "head_commit": "2265d5b708c03d53d63c6796ccc56944ecdfb869",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "regression_results": {
+    "total_specs": 23,
+    "passed": 23,
+    "failed": 0,
+    "skipped": 0
+  },
+  "specs_created": [
+    "/app/tests/e2e/mention-feature.spec.ts"
+  ],
+  "specs_updated": [],
+  "quarantined_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration14_mention.py",
+    "/app/test_reports/pytest/pytest_results_iter14.xml"
+  ],
+  "action_items": [],
+  "updated_files": [
+    "/app/backend/tests/test_iteration14_mention.py",
+    "/app/tests/e2e/mention-feature.spec.ts",
+    "/app/tests/fixtures/helpers.ts"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8 pytest tests passed)",
+    "frontend": "100% (23/23 Playwright tests passed across 4 spec files)"
+  },
+  "seed_data_creation": "Test data prefixed with TEST_iter14_ was created and cleaned up during backend tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All requested features verified working: 1) @-Mention dropdown appears when typing @ in RichTextEditor, 2) Article search API /api/articles/search/linkable works correctly, 3) Selected articles are inserted as clickable mention links, 4) Mention links have correct styling (pink/red background from index.css), 5) Draft status shown in dropdown, 6) ArticleView.jsx has no Zusammenfassung/summary field displayed.",
+  "features_verified": {
+    "P1_mention_dropdown": {
+      "status": "VERIFIED",
+      "notes": "Typing @ in RichTextEditor triggers article search and displays dropdown with matching articles"
+    },
+    "P1_linkable_search_api": {
+      "status": "VERIFIED",
+      "notes": "GET /api/articles/search/linkable?q=query returns articles with article_id, title, status fields"
+    },
+    "P1_mention_link_insertion": {
+      "status": "VERIFIED",
+      "notes": "Selecting an article from dropdown inserts a clickable link with @ArticleTitle format"
+    },
+    "P1_mention_link_styling": {
+      "status": "VERIFIED",
+      "notes": "Mention links have .mention-link class with pink/red gradient background and border"
+    },
+    "P1_summary_field_removed": {
+      "status": "VERIFIED",
+      "notes": "ArticleView.jsx does not display Zusammenfassung section - content goes directly from metadata to article content"
+    },
+    "existing_category_tree": {
+      "status": "VERIFIED",
+      "notes": "Category tree, collapsible folders, and 'Neuer Artikel hier' button all still working"
+    },
+    "login_system": {
+      "status": "VERIFIED",
+      "notes": "Cookie-based JWT authentication working with admin credentials"
+    }
+  },
+  "api_tests_performed": {
+    "auth_login": "POST /api/auth/login - Admin login verified",
+    "linkable_search": "GET /api/articles/search/linkable - Returns article_id, title, status",
+    "linkable_search_auth": "Endpoint requires authentication (401 without)",
+    "linkable_search_short_query": "Queries < 2 chars return empty results",
+    "linkable_search_case_insensitive": "Search is case-insensitive",
+    "linkable_search_limit": "Limit parameter is respected"
+  },
+  "ui_tests_performed": {
+    "mention_dropdown_trigger": "Typing @ in editor shows dropdown",
+    "mention_dropdown_results": "Dropdown shows matching articles from API",
+    "mention_link_insertion": "Clicking dropdown item inserts styled mention link",
+    "mention_link_styling": "Mention links have pink/red background gradient",
+    "mention_dropdown_escape": "Escape key closes dropdown",
+    "mention_draft_indicator": "Draft articles show '(Entwurf)' in dropdown",
+    "article_view_no_summary": "ArticleView shows content without summary section",
+    "article_view_metadata": "Title, dates, tags displayed correctly without summary"
+  }
+}

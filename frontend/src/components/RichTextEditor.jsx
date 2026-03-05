@@ -1,5 +1,5 @@
-import React, { useCallback, useRef } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
+import { useEditor, EditorContent, ReactRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
@@ -17,6 +17,11 @@ import Youtube from '@tiptap/extension-youtube';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
+import Mention from '@tiptap/extension-mention';
+import tippy from 'tippy.js';
+import axios from 'axios';
+import { API } from '@/App';
+import { MentionList } from './MentionSuggestion';
 import {
   Bold,
   Italic,
@@ -561,6 +566,73 @@ const EditorToolbar = ({ editor, onImageUpload }) => {
 };
 
 const RichTextEditor = ({ content, onChange, placeholder = "Inhalt eingeben...", className, onImageUpload }) => {
+  // Mention suggestion configuration
+  const mentionSuggestion = {
+    char: '@',
+    allowSpaces: true,
+    items: async ({ query }) => {
+      if (!query || query.length < 2) return [];
+      try {
+        const response = await axios.get(`${API}/articles/search/linkable`, {
+          params: { q: query, limit: 8 }
+        });
+        return response.data.results || [];
+      } catch (error) {
+        console.error('Failed to fetch articles for mention:', error);
+        return [];
+      }
+    },
+    render: () => {
+      let component;
+      let popup;
+
+      return {
+        onStart: props => {
+          component = new ReactRenderer(MentionList, {
+            props,
+            editor: props.editor,
+          });
+
+          if (!props.clientRect) return;
+
+          popup = tippy('body', {
+            getReferenceClientRect: props.clientRect,
+            appendTo: () => document.body,
+            content: component.element,
+            showOnCreate: true,
+            interactive: true,
+            trigger: 'manual',
+            placement: 'bottom-start',
+          });
+        },
+
+        onUpdate(props) {
+          component?.updateProps(props);
+
+          if (!props.clientRect) return;
+
+          popup?.[0]?.setProps({
+            getReferenceClientRect: props.clientRect,
+          });
+        },
+
+        onKeyDown(props) {
+          if (props.event.key === 'Escape') {
+            popup?.[0]?.hide();
+            return true;
+          }
+
+          return component?.ref?.onKeyDown(props);
+        },
+
+        onExit() {
+          popup?.[0]?.destroy();
+          component?.destroy();
+        },
+      };
+    },
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -620,6 +692,24 @@ const RichTextEditor = ({ content, onChange, placeholder = "Inhalt eingeben...",
       }),
       TextStyle,
       Color,
+      Mention.configure({
+        HTMLAttributes: {
+          class: 'mention-link',
+        },
+        suggestion: mentionSuggestion,
+        renderHTML({ options, node }) {
+          return [
+            'a',
+            {
+              ...options.HTMLAttributes,
+              href: `/articles/${node.attrs.id}`,
+              'data-mention': '',
+              'data-article-id': node.attrs.id,
+            },
+            `@${node.attrs.label}`,
+          ];
+        },
+      }),
     ],
     content,
     onUpdate: ({ editor }) => {
