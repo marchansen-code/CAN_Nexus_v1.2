@@ -25,6 +25,12 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **"Neuer Artikel hier"-Button** erscheint bei Kategorie-Auswahl
 - ✅ **Vorausgewählte Kategorie** beim Erstellen eines neuen Artikels via URL-Parameter
 
+### Artikel-Verlinkung (Iteration 14) - 05.03.2026
+- ✅ **@-Mention-Funktion** im Editor: Tippe "@" um andere Artikel zu suchen und zu verlinken
+- ✅ **Artikel-Suche-API** (`/api/articles/search/linkable`) für Mention-Dropdown
+- ✅ **Klickbare Mention-Links** mit rosa/rotem Styling in Editor und Artikelansicht
+- ✅ **Zusammenfassung-Feld entfernt** aus der Artikelansicht (ArticleView.jsx)
+
 ### Gruppen-System (Iteration 12)
 - ✅ Admins können Gruppen erstellen/bearbeiten/löschen
 - ✅ Admins können User zu Gruppen hinzufügen/entfernen
@@ -97,15 +103,12 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - **Passwort**: CanusaNexus2024!
 
 ## Test Coverage
+- Iteration 14: Backend 100% (8/8), Frontend 100% (23/23)
 - Iteration 13: Backend 100% (11/11), Frontend 100% (14/14)
 - Iteration 12: Backend 100% (19/19), Frontend 100%
 - Last tested: 05.03.2026
 
 ## Backlog
-
-### P1 (High)
-- [ ] **Artikel-Links (@-Mentions)** - Im Editor andere Artikel verlinken (TipTap Mention Extension)
-- [ ] Zusammenfassung-Feld aus ArticleView.jsx entfernen
 
 ### P2 (Medium)
 - [ ] Schnellsuche (Strg+K)
