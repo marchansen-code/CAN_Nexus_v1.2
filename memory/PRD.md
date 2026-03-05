@@ -19,6 +19,12 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ Kategorieverwaltung (Baumstruktur)
 - ✅ Dark/Light/Auto Theme (Light als Default)
 
+### Kategorien-Baumstruktur (Iteration 13) - 05.03.2026
+- ✅ **Hierarchische Kategorien-Anzeige** auf der Wissensartikel-Seite mit klappbaren Eltern-Kind-Beziehungen
+- ✅ **Baumstruktur im ArticleEditor** mit Multi-Auswahl-Checkboxen
+- ✅ **"Neuer Artikel hier"-Button** erscheint bei Kategorie-Auswahl
+- ✅ **Vorausgewählte Kategorie** beim Erstellen eines neuen Artikels via URL-Parameter
+
 ### Gruppen-System (Iteration 12)
 - ✅ Admins können Gruppen erstellen/bearbeiten/löschen
 - ✅ Admins können User zu Gruppen hinzufügen/entfernen
@@ -91,21 +97,21 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - **Passwort**: CanusaNexus2024!
 
 ## Test Coverage
+- Iteration 13: Backend 100% (11/11), Frontend 100% (14/14)
 - Iteration 12: Backend 100% (19/19), Frontend 100%
 - Last tested: 05.03.2026
 
 ## Backlog
 
 ### P1 (High)
-- [ ] **Artikel-Links (@-Mentions)** - Im Editor andere Artikel verlinken
-- [ ] Hierarchische Kategorie-Verwaltung UI verbessern
-- [ ] Editor Buttons prüfen (Quote, Listen)
+- [ ] **Artikel-Links (@-Mentions)** - Im Editor andere Artikel verlinken (TipTap Mention Extension)
+- [ ] Zusammenfassung-Feld aus ArticleView.jsx entfernen
 
 ### P2 (Medium)
 - [ ] Schnellsuche (Strg+K)
 - [ ] Benutzer-Suche in @-Mentions
 - [ ] Artikel-Versionierung
-- [ ] Backend Refactoring (server.py aufteilen)
+- [ ] Backend Refactoring (server.py aufteilen in kleinere Router-Dateien)
 
 ### P3 (Nice to Have)
 - [ ] OCR für gescannte PDFs
