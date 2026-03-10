@@ -40,6 +40,8 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **Zellen verbinden/teilen**, Kopfzellen umschalten
 - ✅ **Kopfzeile/Kopfspalte** umschalten für bestehende Tabellen
 - ✅ **Spaltenbreite per Drag & Drop** anpassen (roter Resize-Handle am Spaltenrand)
+- ✅ **Tabellenbreite** anpassbar (100%, 75%, 50%, 33%, Auto) - Tabelle zentriert sich automatisch
+- ✅ **Zellenhöhe** anpassbar (Auto, Kompakt, Normal, Groß, Sehr groß)
 
 ### Gruppen-System (Iteration 12)
 - ✅ Admins können Gruppen erstellen/bearbeiten/löschen

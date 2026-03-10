@@ -65,7 +65,10 @@ import {
   Maximize2,
   AlignVerticalJustifyStart,
   AlignVerticalJustifyCenter,
-  AlignVerticalJustifyEnd
+  AlignVerticalJustifyEnd,
+  MoveHorizontal,
+  MoveVertical,
+  SeparatorHorizontal
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
@@ -209,6 +212,46 @@ const EditorToolbar = ({ editor, onImageUpload }) => {
     setTableRows(3);
     setTableCols(3);
     setTableWithHeader(true);
+  }, [editor]);
+
+  // Set table width by manipulating DOM directly
+  const setTableWidth = useCallback((width) => {
+    const editorElement = editor.view.dom;
+    const table = editorElement.querySelector('table');
+    if (table) {
+      table.style.width = width;
+      table.style.margin = width === '100%' ? '0' : '0 auto';
+      // Force editor update
+      editor.commands.focus();
+    }
+  }, [editor]);
+
+  // Set all row heights in the table via CSS custom property
+  const setRowHeight = useCallback((height) => {
+    setTimeout(() => {
+      const editorElement = editor.view.dom;
+      const table = editorElement.querySelector('table');
+      if (!table) return;
+      
+      const heightValue = height === 'auto' ? 'auto' : height;
+      
+      // Set a CSS custom property on the table
+      table.style.setProperty('--cell-height', heightValue);
+      
+      // Apply directly to all cells
+      const allCells = table.querySelectorAll('td, th');
+      allCells.forEach(cell => {
+        if (height === 'auto') {
+          cell.style.height = '';
+          cell.style.minHeight = '';
+        } else {
+          cell.style.height = heightValue;
+          cell.style.minHeight = heightValue;
+        }
+      });
+      
+      editor.commands.focus();
+    }, 50);
   }, [editor]);
 
   const handleFileUpload = async (event) => {
@@ -637,6 +680,54 @@ const EditorToolbar = ({ editor, onImageUpload }) => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => editor.chain().focus().setCellAttribute('backgroundColor', null).run()}>
                     <Minus className="h-4 w-4 mr-2" /> Entfernen
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {/* Tabellenbreite */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <MoveHorizontal className="h-4 w-4 mr-2" /> Tabellenbreite
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => setTableWidth('100%')}>
+                    <div className="w-full h-2 mr-2 bg-slate-300 rounded" /> 100% (Volle Breite)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTableWidth('75%')}>
+                    <div className="w-3/4 h-2 mr-2 bg-slate-300 rounded" /> 75%
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTableWidth('50%')}>
+                    <div className="w-1/2 h-2 mr-2 bg-slate-300 rounded" /> 50%
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTableWidth('33%')}>
+                    <div className="w-1/3 h-2 mr-2 bg-slate-300 rounded" /> 33%
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTableWidth('auto')}>
+                    <div className="w-1/4 h-2 mr-2 bg-slate-300 rounded" /> Auto (Inhalt)
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {/* Zeilenhöhe */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <MoveVertical className="h-4 w-4 mr-2" /> Zellenhöhe
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => setRowHeight('auto')}>
+                    <SeparatorHorizontal className="h-4 w-4 mr-2" /> Auto (Standard)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setRowHeight('40px')}>
+                    <SeparatorHorizontal className="h-4 w-4 mr-2" /> Kompakt (40px)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setRowHeight('60px')}>
+                    <SeparatorHorizontal className="h-4 w-4 mr-2" /> Normal (60px)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setRowHeight('80px')}>
+                    <SeparatorHorizontal className="h-4 w-4 mr-2" /> Groß (80px)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setRowHeight('120px')}>
+                    <SeparatorHorizontal className="h-4 w-4 mr-2" /> Sehr groß (120px)
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>

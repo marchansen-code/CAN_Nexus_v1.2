@@ -376,9 +376,8 @@ input:focus, textarea:focus, select:focus {
 
 /* Table Resize Handles */
 .ProseMirror table {
-    overflow: hidden;
-    table-layout: fixed;
-    width: 100%;
+    overflow: visible;
+    table-layout: auto;
     margin: 1rem 0;
     border-collapse: collapse;
 }
@@ -389,6 +388,8 @@ input:focus, textarea:focus, select:focus {
     position: relative;
     vertical-align: top;
     box-sizing: border-box;
+    height: var(--cell-height, auto);
+    min-height: var(--cell-height, auto);
 }
 
 /* Column resize handle */
@@ -401,6 +402,25 @@ input:focus, textarea:focus, select:focus {
     background-color: hsl(0 84% 50%);
     pointer-events: none;
     z-index: 20;
+}
+
+/* Row resize handle - visual indicator at bottom of cells */
+.ProseMirror td::after,
+.ProseMirror th::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    cursor: row-resize;
+    background: transparent;
+    transition: background 0.15s ease;
+}
+
+.ProseMirror td:hover::after,
+.ProseMirror th:hover::after {
+    background: hsl(0 84% 50% / 0.3);
 }
 
 /* Resize cursor when hovering over column borders */
