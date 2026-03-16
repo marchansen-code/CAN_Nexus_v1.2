@@ -204,7 +204,8 @@ const ArticleEditor = () => {
             visible_to_groups: data.visible_to_groups || [],
             expiry_date: data.expiry_date ? new Date(data.expiry_date) : null,
             review_date: data.review_date ? new Date(data.review_date) : null,
-            important_until: data.important_until ? new Date(data.important_until) : null
+            important_until: data.important_until ? new Date(data.important_until) : null,
+            comments_enabled: data.comments_enabled !== false  // Default to true if not set
           });
         } catch (error) {
           console.error("Failed to load article:", error);

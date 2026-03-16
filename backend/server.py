@@ -168,6 +168,7 @@ class ArticleUpdate(BaseModel):
     visible_to_groups: Optional[List[str]] = None
     is_important: Optional[bool] = None
     important_until: Optional[datetime] = None
+    comments_enabled: Optional[bool] = None
 
 class Document(BaseModel):
     model_config = ConfigDict(extra="ignore")
