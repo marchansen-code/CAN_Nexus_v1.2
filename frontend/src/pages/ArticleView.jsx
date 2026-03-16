@@ -20,7 +20,13 @@ import {
   MessageSquare,
   Send,
   Trash2,
-  Loader2
+  Loader2,
+  BarChart3,
+  Heart,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +51,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 
 const StatusBadge = ({ status }) => {
   const styles = {
@@ -85,9 +98,16 @@ const ArticleView = () => {
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [deleteCommentDialog, setDeleteCommentDialog] = useState({ open: false, commentId: null });
+  
+  // Analytics state
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   const canEdit = user?.role === "admin" || user?.role === "editor";
   const isAdmin = user?.role === "admin";
+  const isAuthor = article?.created_by === user?.user_id;
+  const canViewAnalytics = isAdmin || isAuthor;
 
   useEffect(() => {
     fetchData();
@@ -181,6 +201,23 @@ const ArticleView = () => {
     } finally {
       setDeleteCommentDialog({ open: false, commentId: null });
     }
+  };
+
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const response = await axios.get(`${API}/articles/${id}/analytics`);
+      setAnalytics(response.data);
+    } catch (error) {
+      toast.error("Fehler beim Laden der Statistiken");
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const handleOpenAnalytics = () => {
+    setAnalyticsOpen(true);
+    fetchAnalytics();
   };
 
   const handleToggleFavorite = async () => {
@@ -294,6 +331,19 @@ const ArticleView = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          
+          {/* Analytics Button - only for author and admin */}
+          {canViewAnalytics && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleOpenAnalytics}
+              data-testid="analytics-btn"
+            >
+              <BarChart3 className="w-4 h-4 mr-1.5" />
+              Statistiken
+            </Button>
+          )}
           
           {canEdit && (
             <Button 
@@ -551,6 +601,126 @@ const ArticleView = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Analytics Dialog */}
+      <Dialog open={analyticsOpen} onOpenChange={setAnalyticsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-red-500" />
+              Artikel-Statistiken
+            </DialogTitle>
+          </DialogHeader>
+          
+          {analyticsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : analytics ? (
+            <div className="space-y-6">
+              {/* Title and Status */}
+              <div>
+                <h3 className="font-semibold text-lg line-clamp-2">{analytics.title}</h3>
+                <p className="text-sm text-muted-foreground">
+                  Von {analytics.author_name} • {analytics.created_at && new Date(analytics.created_at).toLocaleDateString('de-DE')}
+                </p>
+              </div>
+
+              {/* Main Metrics */}
+              <div className="grid grid-cols-3 gap-4">
+                <Card className="border-2">
+                  <CardContent className="pt-4 text-center">
+                    <Eye className="w-6 h-6 mx-auto mb-2 text-blue-500" />
+                    <p className="text-2xl font-bold">{analytics.metrics.view_count}</p>
+                    <p className="text-xs text-muted-foreground">Aufrufe</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-2">
+                  <CardContent className="pt-4 text-center">
+                    <Heart className="w-6 h-6 mx-auto mb-2 text-red-500" />
+                    <p className="text-2xl font-bold">{analytics.metrics.favorites_count}</p>
+                    <p className="text-xs text-muted-foreground">Favoriten</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-2">
+                  <CardContent className="pt-4 text-center">
+                    <MessageSquare className="w-6 h-6 mx-auto mb-2 text-green-500" />
+                    <p className="text-2xl font-bold">{analytics.metrics.comments_count}</p>
+                    <p className="text-xs text-muted-foreground">Kommentare</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Engagement Score */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Engagement-Score</span>
+                  <span className="text-sm font-bold">{analytics.metrics.engagement_score}/100</span>
+                </div>
+                <Progress 
+                  value={analytics.metrics.engagement_score} 
+                  className="h-3"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Berechnet aus Aufrufen, Favoriten und Kommentaren
+                </p>
+              </div>
+
+              {/* Comparison with Average */}
+              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4">
+                <h4 className="text-sm font-medium mb-3">Vergleich mit Durchschnitt</h4>
+                <div className="flex items-center gap-3">
+                  {analytics.comparison.trend === "above_average" ? (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <TrendingUp className="w-5 h-5" />
+                      <span className="font-medium">Überdurchschnittlich</span>
+                    </div>
+                  ) : analytics.comparison.trend === "below_average" ? (
+                    <div className="flex items-center gap-2 text-amber-600">
+                      <TrendingDown className="w-5 h-5" />
+                      <span className="font-medium">Unterdurchschnittlich</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <Minus className="w-5 h-5" />
+                      <span className="font-medium">Durchschnittlich</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Ø {analytics.comparison.average_views} Aufrufe • Dieser Artikel: {analytics.comparison.percentile}% des Durchschnitts
+                </p>
+              </div>
+
+              {/* Tags and Categories */}
+              {(analytics.tags?.length > 0 || analytics.categories?.length > 0) && (
+                <div className="space-y-2">
+                  {analytics.categories?.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <FolderTree className="w-4 h-4 text-muted-foreground" />
+                      {analytics.categories.map((cat, i) => (
+                        <Badge key={i} variant="outline">{cat}</Badge>
+                      ))}
+                    </div>
+                  )}
+                  {analytics.tags?.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Tag className="w-4 h-4 text-muted-foreground" />
+                      {analytics.tags.map((tag, i) => (
+                        <Badge key={i} variant="secondary">{tag}</Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              Keine Statistiken verfügbar
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -6,12 +6,13 @@ import {
   Search as SearchIcon, 
   FileText, 
   Clock, 
-  Tag, 
+  Tag,
   Loader2,
   ArrowRight,
   FolderTree,
   Eye,
-  X
+  X,
+  Filter
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,8 +42,24 @@ const Search = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
+  const [allTags, setAllTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [showTagFilter, setShowTagFilter] = useState(false);
 
   const debouncedQuery = useDebounce(query, 300);
+
+  // Load all tags
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const response = await axios.get(`${API}/tags`);
+        setAllTags(response.data.tags || []);
+      } catch (error) {
+        console.error("Failed to load tags:", error);
+      }
+    };
+    loadTags();
+  }, []);
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -61,8 +78,14 @@ const Search = () => {
   };
 
   // Perform search
-  const performSearch = useCallback(async (searchQuery) => {
-    if (!searchQuery || searchQuery.length < 2) {
+  const performSearch = useCallback(async (searchQuery, tags = []) => {
+    if (!searchQuery && tags.length === 0) {
+      setResults([]);
+      setHasSearched(false);
+      return;
+    }
+
+    if (searchQuery && searchQuery.length < 2 && tags.length === 0) {
       setResults([]);
       setHasSearched(false);
       return;
@@ -73,11 +96,12 @@ const Search = () => {
 
     try {
       const response = await axios.post(`${API}/search`, {
-        query: searchQuery,
-        top_k: 15
+        query: searchQuery || "",
+        top_k: 20,
+        tags: tags.length > 0 ? tags : null
       });
       setResults(response.data.results || []);
-      saveSearch(searchQuery);
+      if (searchQuery) saveSearch(searchQuery);
     } catch (error) {
       console.error("Search failed:", error);
       setResults([]);
@@ -86,10 +110,24 @@ const Search = () => {
     }
   }, []);
 
-  // Search on debounced query change
+  // Search on debounced query change or tag selection
   useEffect(() => {
-    performSearch(debouncedQuery);
-  }, [debouncedQuery, performSearch]);
+    performSearch(debouncedQuery, selectedTags);
+  }, [debouncedQuery, selectedTags, performSearch]);
+
+  // Toggle tag selection
+  const toggleTag = (tag) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag) 
+        : [...prev, tag]
+    );
+  };
+
+  // Clear all tag filters
+  const clearTagFilters = () => {
+    setSelectedTags([]);
+  };
 
   // Handle article click
   const handleArticleClick = (articleId) => {
@@ -154,26 +192,97 @@ const Search = () => {
               placeholder="Suchbegriff eingeben... (z.B. Westkanada, Mietwagen, Hotels)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-12 pr-12 h-14 text-lg border-0 focus-visible:ring-0 bg-transparent"
+              className="pl-12 pr-24 h-14 text-lg border-0 focus-visible:ring-0 bg-transparent"
               data-testid="search-input"
               autoFocus
             />
-            {query && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              {query && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={clearSearch}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
               <Button
-                variant="ghost"
+                variant={showTagFilter ? "secondary" : "ghost"}
                 size="icon"
-                onClick={clearSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2"
+                onClick={() => setShowTagFilter(!showTagFilter)}
+                className={selectedTags.length > 0 ? "text-red-600" : ""}
+                title="Nach Tags filtern"
               >
-                <X className="w-4 h-4" />
+                <Filter className="w-4 h-4" />
+                {selectedTags.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    {selectedTags.length}
+                  </span>
+                )}
               </Button>
-            )}
+            </div>
             {loading && (
-              <Loader2 className="absolute right-12 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-muted-foreground" />
+              <Loader2 className="absolute right-24 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-muted-foreground" />
             )}
           </div>
         </CardContent>
       </Card>
+
+      {/* Tag Filter Panel */}
+      {showTagFilter && (
+        <Card className="border-dashed animate-fadeIn">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                Nach Tags filtern
+              </h3>
+              {selectedTags.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearTagFilters}>
+                  Filter zurücksetzen
+                </Button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {allTags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant={selectedTags.includes(tag) ? "default" : "outline"}
+                  className={`cursor-pointer transition-colors ${
+                    selectedTags.includes(tag) 
+                      ? "bg-red-500 hover:bg-red-600 text-white" 
+                      : "hover:bg-red-50 hover:border-red-300"
+                  }`}
+                  onClick={() => toggleTag(tag)}
+                >
+                  {tag}
+                </Badge>
+              ))}
+              {allTags.length === 0 && (
+                <p className="text-sm text-muted-foreground">Keine Tags vorhanden</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Selected Tags Display */}
+      {selectedTags.length > 0 && !showTagFilter && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-muted-foreground">Gefiltert nach:</span>
+          {selectedTags.map((tag) => (
+            <Badge 
+              key={tag} 
+              variant="default" 
+              className="bg-red-500 hover:bg-red-600 cursor-pointer"
+              onClick={() => toggleTag(tag)}
+            >
+              {tag}
+              <X className="w-3 h-3 ml-1" />
+            </Badge>
+          ))}
+        </div>
+      )}
 
       {/* Recent Searches (when no query) */}
       {!query && recentSearches.length > 0 && (
@@ -252,7 +361,38 @@ const Search = () => {
                               {new Date(result.updated_at).toLocaleDateString('de-DE')}
                             </span>
                           )}
+                          {result.view_count > 0 && (
+                            <span className="flex items-center gap-1">
+                              <Eye className="w-3 h-3" />
+                              {result.view_count}
+                            </span>
+                          )}
                         </div>
+
+                        {/* Tags */}
+                        {result.tags && result.tags.length > 0 && (
+                          <div className="flex items-center gap-2 pl-8 flex-wrap">
+                            <Tag className="w-3 h-3 text-muted-foreground" />
+                            {result.tags.slice(0, 5).map((tag) => (
+                              <Badge 
+                                key={tag} 
+                                variant="outline" 
+                                className={`text-xs ${
+                                  selectedTags.includes(tag) 
+                                    ? "bg-red-50 border-red-300 text-red-700" 
+                                    : ""
+                                }`}
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                            {result.tags.length > 5 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{result.tags.length - 5}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Right Side */}

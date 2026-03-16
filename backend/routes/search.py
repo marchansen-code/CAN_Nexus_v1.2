@@ -2,7 +2,7 @@
 Search routes for the CANUSA Knowledge Hub API.
 """
 from fastapi import APIRouter, Depends
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 import re
 
@@ -17,12 +17,47 @@ class SearchQueryModel(BaseModel):
     query: str
     top_k: int = 10
     category_id: Optional[str] = None
+    tags: Optional[List[str]] = None  # Filter by specific tags
 
 
 @router.post("")
 async def search_articles(query: SearchQueryModel, user: User = Depends(get_current_user)):
-    """Search articles with keyword matching."""
+    """Search articles with keyword matching and optional tag filtering."""
+    # Build base query
+    mongo_query = {"deleted_at": {"$exists": False}}
+    
+    # Tag filter - if tags provided, filter by them
+    if query.tags and len(query.tags) > 0:
+        mongo_query["tags"] = {"$in": query.tags}
+    
+    # Category filter
+    if query.category_id:
+        mongo_query["category_ids"] = query.category_id
+    
+    # If no search query but tags provided, just filter by tags
     if not query.query or len(query.query) < 2:
+        if query.tags and len(query.tags) > 0:
+            articles = await db.articles.find(mongo_query, {"_id": 0}).sort("updated_at", -1).limit(query.top_k).to_list(query.top_k)
+            results = []
+            for art in articles:
+                category_name = None
+                if art.get("category_ids") and len(art["category_ids"]) > 0:
+                    cat = await db.categories.find_one({"category_id": art["category_ids"][0]}, {"_id": 0, "name": 1})
+                    if cat:
+                        category_name = cat["name"]
+                
+                results.append({
+                    "article_id": art["article_id"],
+                    "title": art["title"],
+                    "content_snippet": art.get("content", "")[:200] + "...",
+                    "score": 1.0,
+                    "category_name": category_name,
+                    "status": art.get("status", "draft"),
+                    "updated_at": art.get("updated_at"),
+                    "tags": art.get("tags", []),
+                    "view_count": art.get("view_count", 0)
+                })
+            return {"results": results, "query": query.query, "tags": query.tags}
         return {"results": [], "query": query.query}
     
     search_terms = query.query.lower().split()
@@ -36,10 +71,7 @@ async def search_articles(query: SearchQueryModel, user: User = Depends(get_curr
             {"tags": {"$regex": term, "$options": "i"}}
         ])
     
-    mongo_query = {"$or": or_conditions}
-    
-    if query.category_id:
-        mongo_query["category_id"] = query.category_id
+    mongo_query["$or"] = or_conditions
     
     articles = await db.articles.find(mongo_query, {"_id": 0}).limit(query.top_k * 2).to_list(query.top_k * 2)
     
@@ -48,6 +80,7 @@ async def search_articles(query: SearchQueryModel, user: User = Depends(get_curr
         title_lower = art["title"].lower()
         content_lower = art.get("content", "").lower()
         summary_lower = art.get("summary", "").lower()
+        tags_str = " ".join(art.get("tags", [])).lower()
         
         score = 0
         for term in search_terms:
@@ -57,6 +90,8 @@ async def search_articles(query: SearchQueryModel, user: User = Depends(get_curr
                 score += 0.2
             if term in content_lower:
                 score += 0.1
+            if term in tags_str:
+                score += 0.3  # Tags are important for search
         
         if score == 0:
             continue
@@ -76,8 +111,8 @@ async def search_articles(query: SearchQueryModel, user: User = Depends(get_curr
                 snippet = clean_content[:200] + "..." if len(clean_content) > 200 else clean_content
         
         category_name = None
-        if art.get("category_id"):
-            cat = await db.categories.find_one({"category_id": art["category_id"]}, {"_id": 0, "name": 1})
+        if art.get("category_ids") and len(art["category_ids"]) > 0:
+            cat = await db.categories.find_one({"category_id": art["category_ids"][0]}, {"_id": 0, "name": 1})
             if cat:
                 category_name = cat["name"]
         
@@ -88,12 +123,14 @@ async def search_articles(query: SearchQueryModel, user: User = Depends(get_curr
             "score": min(score, 1.0),
             "category_name": category_name,
             "status": art.get("status", "draft"),
-            "updated_at": art.get("updated_at")
+            "updated_at": art.get("updated_at"),
+            "tags": art.get("tags", []),
+            "view_count": art.get("view_count", 0)
         })
     
     results.sort(key=lambda x: x["score"], reverse=True)
     
-    return {"results": results[:query.top_k], "query": query.query}
+    return {"results": results[:query.top_k], "query": query.query, "tags": query.tags}
 
 
 @router.get("/quick")

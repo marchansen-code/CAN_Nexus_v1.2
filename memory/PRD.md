@@ -113,6 +113,15 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **Database-Modul** - MongoDB-Verbindung in `database.py`
 - ✅ **Dependencies** - Auth-Funktionen in `dependencies.py`
 
+### Tag-Suche & Artikel-Analytics (Iteration 21) - 16.03.2026
+- ✅ **Tag-Suche** - Artikel können nach Tags gefiltert werden
+- ✅ **Tag-Filter Panel** - Klickbare Tags zum Ein-/Ausschalten der Filter
+- ✅ **Tags in Suchergebnissen** - Zeigt Tags der gefundenen Artikel an
+- ✅ **Artikel-Analytics** - Dialog mit Metriken (Aufrufe, Favoriten, Kommentare)
+- ✅ **Engagement-Score** - Berechnet aus Aufrufen, Favoriten und Kommentaren (0-100)
+- ✅ **Vergleich mit Durchschnitt** - Zeigt ob Artikel über/unter Durchschnitt liegt
+- ✅ **Zugriffskontrolle** - Nur Autor und Admins können Analytics sehen
+
 ## API Endpoints
 
 ### Groups (Admin only)
@@ -165,7 +174,6 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 
 ### P3 (Nice to Have)
 - [ ] OCR für gescannte PDFs
-- [ ] Analytics Dashboard
 - [ ] E-Mail-Benachrichtigungen
 - [ ] Hochwertige PDF-zu-HTML-Konvertierung
 

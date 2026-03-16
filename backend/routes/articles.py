@@ -284,3 +284,79 @@ async def get_all_tags(user: User = Depends(get_current_user)):
     result = await db.articles.aggregate(pipeline).to_list(500)
     tags = [r["_id"] for r in result if r["_id"]]
     return {"tags": tags}
+
+
+# ==================== ANALYTICS ====================
+
+@router.get("/{article_id}/analytics")
+async def get_article_analytics(article_id: str, user: User = Depends(get_current_user)):
+    """Get analytics for an article (author and admin only)."""
+    article = await db.articles.find_one({"article_id": article_id}, {"_id": 0})
+    if not article:
+        raise HTTPException(status_code=404, detail="Artikel nicht gefunden")
+    
+    # Check permission: only author or admin can view analytics
+    if user.role != "admin" and article.get("created_by") != user.user_id:
+        raise HTTPException(status_code=403, detail="Nur der Autor oder Administratoren können die Statistiken sehen")
+    
+    # Get author info
+    author_name = "Unbekannt"
+    if article.get("created_by"):
+        author = await db.users.find_one({"user_id": article["created_by"]}, {"_id": 0, "name": 1})
+        if author:
+            author_name = author["name"]
+    
+    # Get comments count
+    comments_count = await db.comments.count_documents({"article_id": article_id})
+    
+    # Get favorites count
+    favorites_count = len(article.get("favorited_by", []))
+    
+    # Calculate engagement score (0-100)
+    view_count = article.get("view_count", 0)
+    engagement_score = min(100, (view_count * 2) + (favorites_count * 10) + (comments_count * 5))
+    
+    # Get view trend (compare to average)
+    all_articles_pipeline = [
+        {"$match": {"deleted_at": {"$exists": False}}},
+        {"$group": {"_id": None, "avg_views": {"$avg": "$view_count"}}}
+    ]
+    avg_result = await db.articles.aggregate(all_articles_pipeline).to_list(1)
+    avg_views = avg_result[0]["avg_views"] if avg_result else 0
+    
+    trend = "neutral"
+    if view_count > avg_views * 1.5:
+        trend = "above_average"
+    elif view_count < avg_views * 0.5:
+        trend = "below_average"
+    
+    # Get category names
+    category_names = []
+    for cat_id in article.get("category_ids", []):
+        cat = await db.categories.find_one({"category_id": cat_id}, {"_id": 0, "name": 1})
+        if cat:
+            category_names.append(cat["name"])
+    
+    return {
+        "article_id": article_id,
+        "title": article["title"],
+        "status": article.get("status", "draft"),
+        "author_name": author_name,
+        "created_at": article.get("created_at"),
+        "updated_at": article.get("updated_at"),
+        "categories": category_names,
+        "tags": article.get("tags", []),
+        "metrics": {
+            "view_count": view_count,
+            "favorites_count": favorites_count,
+            "comments_count": comments_count,
+            "engagement_score": engagement_score
+        },
+        "comparison": {
+            "average_views": round(avg_views, 1),
+            "trend": trend,
+            "percentile": round((view_count / max(avg_views, 1)) * 100, 1) if avg_views > 0 else 100
+        },
+        "is_important": article.get("is_important", False),
+        "comments_enabled": article.get("comments_enabled", True)
+    }
