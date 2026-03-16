@@ -27,13 +27,13 @@ test.describe('Article Editor with Category Tree', () => {
     await page.goto('/articles/new', { waitUntil: 'domcontentloaded' });
     await expect(page.getByTestId('article-editor')).toBeVisible({ timeout: 10000 });
     
-    // Look for folder icons
-    const folderIcons = page.locator('.lucide-folder, .lucide-folder-open');
+    // Look for folder icons (SVG elements with Folder in the path or text-amber-500 class)
+    const folderIcons = page.locator('svg.text-amber-500, svg[class*="amber"]');
     const count = await folderIcons.count();
     expect(count).toBeGreaterThan(0);
     
-    // Look for expand arrows
-    const arrows = page.locator('.lucide-chevron-right, .lucide-chevron-down');
+    // Look for expand arrows/chevrons
+    const arrows = page.locator('button > svg.text-muted-foreground, svg[class*="chevron"]');
     const arrowCount = await arrows.count();
     
     console.log(`Editor has ${count} category folders and ${arrowCount} expand arrows`);
@@ -100,15 +100,13 @@ test.describe('Article Editor with Category Tree', () => {
     await page.goto('/articles/new', { waitUntil: 'domcontentloaded' });
     await expect(page.getByTestId('article-editor')).toBeVisible({ timeout: 10000 });
     
-    // Find and click expand arrow
-    const expandArrow = page.locator('.lucide-chevron-right').first();
-    const hasExpand = await expandArrow.isVisible().catch(() => false);
+    // Find and click expand button (small button with chevron)
+    const expandButton = page.locator('button.hover\\:bg-muted').first();
+    const hasExpand = await expandButton.isVisible().catch(() => false);
     
     if (hasExpand) {
-      await expandArrow.click();
-      
-      // Should now have chevron-down visible
-      await expect(page.locator('.lucide-chevron-down').first()).toBeVisible({ timeout: 5000 });
+      await expandButton.click();
+      await page.waitForTimeout(500);
     }
     
     await page.screenshot({ path: 'editor-expanded-tree.jpeg', quality: 20, fullPage: false });

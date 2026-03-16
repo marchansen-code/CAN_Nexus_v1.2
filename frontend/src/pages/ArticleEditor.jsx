@@ -23,7 +23,9 @@ import {
   Folder,
   FolderOpen,
   FileEdit,
-  MessageSquare
+  MessageSquare,
+  Maximize2,
+  History
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +56,7 @@ import {
 } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
 import RichTextEditor from "@/components/RichTextEditor";
+import FullscreenEditor from "@/components/FullscreenEditor";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -171,6 +174,10 @@ const ArticleEditor = () => {
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const [expandedCategoryIds, setExpandedCategoryIds] = useState(new Set());
   const [pdfImported, setPdfImported] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [versions, setVersions] = useState([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
 
   // Check for PDF import data on mount
   useEffect(() => {
@@ -299,6 +306,88 @@ const ArticleEditor = () => {
     }
   };
 
+  // Version history functions
+  const loadVersions = async () => {
+    if (!articleId || isNew) return;
+    
+    setLoadingVersions(true);
+    try {
+      const response = await axios.get(`${API}/versions/articles/${articleId}`);
+      setVersions(response.data);
+    } catch (error) {
+      console.error("Failed to load versions:", error);
+      toast.error("Versionshistorie konnte nicht geladen werden");
+    } finally {
+      setLoadingVersions(false);
+    }
+  };
+
+  const restoreVersion = async (versionId, versionNumber) => {
+    if (!confirm(`Möchten Sie wirklich Version ${versionNumber} wiederherstellen? Der aktuelle Stand wird dabei als neue Version gespeichert.`)) {
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/versions/articles/${articleId}/${versionId}/restore`);
+      toast.success(`Version ${versionNumber} wurde wiederhergestellt`);
+      // Reload article
+      const response = await axios.get(`${API}/articles/${articleId}`);
+      const art = response.data;
+      setArticle({
+        title: art.title || "",
+        content: art.content || "",
+        category_ids: art.category_ids || [],
+        status: art.status || "draft",
+        tags: art.tags || [],
+        contact_person_id: art.contact_person_id || null,
+        visible_to_groups: art.visible_to_groups || [],
+        expiry_date: art.expiry_date ? new Date(art.expiry_date) : null,
+        review_date: art.review_date ? new Date(art.review_date) : null,
+        is_important: art.is_important || false,
+        important_until: art.important_until ? new Date(art.important_until) : null,
+        comments_enabled: art.comments_enabled !== false
+      });
+      setShowVersionHistory(false);
+      loadVersions(); // Refresh versions
+    } catch (error) {
+      console.error("Failed to restore version:", error);
+      toast.error("Version konnte nicht wiederhergestellt werden");
+    }
+  };
+
+  const previewVersion = async (versionId) => {
+    try {
+      const response = await axios.get(`${API}/versions/articles/${articleId}/${versionId}`);
+      // Open in new window or show in modal
+      const version = response.data;
+      const previewWindow = window.open('', '_blank', 'width=800,height=600');
+      previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Version ${version.version_number} - ${version.title}</title>
+          <style>
+            body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
+            h1 { border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
+            .meta { color: #64748b; margin-bottom: 1rem; }
+            .content { line-height: 1.6; }
+          </style>
+        </head>
+        <body>
+          <h1>${version.title}</h1>
+          <div class="meta">
+            Version ${version.version_number} • ${new Date(version.created_at).toLocaleString('de-DE')} • ${version.created_by_name}
+          </div>
+          <div class="content">${version.content}</div>
+        </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error("Failed to preview version:", error);
+      toast.error("Vorschau konnte nicht geladen werden");
+    }
+  };
+
   // Tag handling
   const handleAddTag = (tag) => {
     const trimmed = tag.trim().toLowerCase();
@@ -424,8 +513,33 @@ const ArticleEditor = () => {
 
           {/* Content Editor */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Inhalt</CardTitle>
+              <div className="flex items-center gap-2">
+                {!isNew && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      loadVersions();
+                      setShowVersionHistory(true);
+                    }}
+                    data-testid="version-history-btn"
+                  >
+                    <History className="w-4 h-4 mr-1" />
+                    Versionen
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsFullscreen(true)}
+                  data-testid="fullscreen-editor-btn"
+                >
+                  <Maximize2 className="w-4 h-4 mr-1" />
+                  Vollbild
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <RichTextEditor
@@ -433,6 +547,7 @@ const ArticleEditor = () => {
                 onChange={(html) => setArticle(prev => ({ ...prev, content: html }))}
                 placeholder="Artikelinhalt eingeben..."
                 onImageUpload={handleImageUpload}
+                onToggleFullscreen={() => setIsFullscreen(true)}
                 data-testid="article-content-editor"
               />
             </CardContent>
@@ -726,6 +841,87 @@ const ArticleEditor = () => {
           </Card>
         </div>
       </div>
+
+      {/* Fullscreen Editor */}
+      <FullscreenEditor
+        isOpen={isFullscreen}
+        onClose={() => setIsFullscreen(false)}
+        content={article.content}
+        onChange={(html) => setArticle(prev => ({ ...prev, content: html }))}
+        onImageUpload={handleImageUpload}
+        title={article.title || "Neuer Artikel"}
+      />
+
+      {/* Version History Dialog */}
+      {showVersionHistory && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <CardHeader className="flex flex-row items-center justify-between border-b">
+              <CardTitle className="flex items-center gap-2">
+                <History className="w-5 h-5" />
+                Versionshistorie
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setShowVersionHistory(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-auto p-4">
+              {loadingVersions ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : versions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>Keine Versionen vorhanden</p>
+                  <p className="text-sm mt-1">Versionen werden beim Speichern erstellt</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {versions.map((version) => (
+                    <div 
+                      key={version.version_id}
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/50 transition-colors"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Version {version.version_number}</span>
+                          {version.change_summary && (
+                            <Badge variant="outline" className="text-xs">
+                              {version.change_summary}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-0.5">
+                          {new Date(version.created_at).toLocaleString('de-DE')} • {version.created_by_name}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => previewVersion(version.version_id)}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Vorschau
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => restoreVersion(version.version_id, version.version_number)}
+                          className="text-amber-600 border-amber-300 hover:bg-amber-50"
+                        >
+                          Wiederherstellen
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

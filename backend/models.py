@@ -207,3 +207,31 @@ class BackupImportRequest(BaseModel):
     import_users: bool = False
     import_groups: bool = False
     overwrite_existing: bool = False
+
+
+
+# ==================== VERSION MODELS ====================
+
+class ArticleVersion(BaseModel):
+    """Model for article version history."""
+    version_id: str = Field(default_factory=lambda: f"ver_{uuid.uuid4().hex[:12]}")
+    article_id: str
+    version_number: int
+    title: str
+    content: str
+    category_ids: List[str] = []
+    tags: List[str] = []
+    status: str
+    created_by: str
+    created_by_name: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    change_summary: Optional[str] = None
+
+
+class ArticleVersionResponse(BaseModel):
+    """Response model for version list."""
+    version_id: str
+    version_number: int
+    created_by_name: str
+    created_at: datetime
+    change_summary: Optional[str] = None

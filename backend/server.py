@@ -14,7 +14,7 @@ from database import db, client, DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD, DE
 from dependencies import get_password_hash
 
 # Route modules
-from routes import auth, users, groups, categories, articles, search, documents, document_folders, recycle_bin, images, stats, backup, exports
+from routes import auth, users, groups, categories, articles, search, documents, document_folders, recycle_bin, images, stats, backup, exports, versions
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -49,6 +49,7 @@ app.include_router(images.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 app.include_router(backup.router, prefix="/api")
 app.include_router(exports.router, prefix="/api")
+app.include_router(versions.router, prefix="/api")
 
 # CORS middleware
 app.add_middleware(
@@ -76,6 +77,7 @@ async def startup():
     await db.users.create_index("email", unique=True)
     await db.user_sessions.create_index("session_token")
     await db.groups.create_index("name", unique=True)
+    await db.article_versions.create_index([("article_id", 1), ("version_number", -1)])
     
     # Check for existing admin user
     admin_exists = await db.users.find_one({"email": DEFAULT_ADMIN_EMAIL})

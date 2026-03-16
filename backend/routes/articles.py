@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import re
 
 from database import db
-from models import User, Article, ArticleCreate, ArticleUpdate, Comment, CommentCreate, SearchQuery
+from models import User, Article, ArticleCreate, ArticleUpdate, Comment, CommentCreate, SearchQuery, ArticleVersion
 from dependencies import get_current_user
 
 router = APIRouter(prefix="/articles", tags=["Articles"])
@@ -172,7 +172,15 @@ async def create_article(article: ArticleCreate, user: User = Depends(get_curren
 
 @router.put("/{article_id}", response_model=Dict)
 async def update_article(article_id: str, update: ArticleUpdate, user: User = Depends(get_current_user)):
-    """Update an article."""
+    """Update an article and create a version snapshot."""
+    # Get current article before update
+    current_article = await db.articles.find_one({"article_id": article_id}, {"_id": 0})
+    if not current_article:
+        raise HTTPException(status_code=404, detail="Artikel nicht gefunden")
+    
+    # Create a version of the current state before updating
+    await create_article_version(article_id, current_article, user)
+    
     update_data = {k: v for k, v in update.model_dump().items() if v is not None}
     update_data["updated_by"] = user.user_id
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -188,6 +196,40 @@ async def update_article(article_id: str, update: ArticleUpdate, user: User = De
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Artikel nicht gefunden")
+    
+    article = await db.articles.find_one({"article_id": article_id}, {"_id": 0})
+    return article
+
+
+async def create_article_version(article_id: str, article: dict, user: User, change_summary: str = None):
+    """Create a new version entry for an article."""
+    # Get the next version number
+    last_version = await db.article_versions.find_one(
+        {"article_id": article_id},
+        sort=[("version_number", -1)]
+    )
+    next_version = (last_version.get("version_number", 0) if last_version else 0) + 1
+    
+    # Get user name
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"name": 1, "_id": 0})
+    user_name = user_doc.get("name", "Unbekannt") if user_doc else "Unbekannt"
+    
+    version = ArticleVersion(
+        article_id=article_id,
+        version_number=next_version,
+        title=article["title"],
+        content=article["content"],
+        category_ids=article.get("category_ids", []),
+        tags=article.get("tags", []),
+        status=article.get("status", "draft"),
+        created_by=user.user_id,
+        created_by_name=user_name,
+        change_summary=change_summary
+    )
+    
+    version_doc = version.model_dump()
+    version_doc["created_at"] = version_doc["created_at"].isoformat()
+    await db.article_versions.insert_one(version_doc)
     
     article = await db.articles.find_one({"article_id": article_id}, {"_id": 0})
     return article

@@ -22,6 +22,7 @@ import tippy from 'tippy.js';
 import axios from 'axios';
 import { API } from '@/App';
 import { MentionList } from './MentionSuggestion';
+import { UserMentionList } from './UserMentionList';
 import {
   Bold,
   Italic,
@@ -71,7 +72,8 @@ import {
   SeparatorHorizontal,
   ImagePlus,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  Minimize2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
@@ -198,7 +200,7 @@ const ResizableImage = Image.extend({
   },
 });
 
-const EditorToolbar = ({ editor, onImageUpload }) => {
+const EditorToolbar = ({ editor, onImageUpload, isFullscreen, onToggleFullscreen }) => {
   const [linkUrl, setLinkUrl] = React.useState('');
   const [imageUrl, setImageUrl] = React.useState('');
   const [youtubeUrl, setYoutubeUrl] = React.useState('');
@@ -840,6 +842,27 @@ const EditorToolbar = ({ editor, onImageUpload }) => {
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* Fullscreen Toggle */}
+      {onToggleFullscreen && (
+        <>
+          <Separator orientation="vertical" className="h-6 mx-1" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleFullscreen}
+            className="h-8 gap-1 px-2"
+            title={isFullscreen ? "Vollbildmodus beenden (Esc)" : "Vollbildmodus"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="h-4 w-4" />
+            ) : (
+              <Maximize2 className="h-4 w-4" />
+            )}
+            <span className="text-xs hidden sm:inline">{isFullscreen ? "Beenden" : "Vollbild"}</span>
+          </Button>
+        </>
+      )}
+
       {/* Table Creation Dialog */}
       <Dialog open={showTableDialog} onOpenChange={setShowTableDialog}>
         <DialogContent className="sm:max-w-md">
@@ -936,8 +959,8 @@ const EditorToolbar = ({ editor, onImageUpload }) => {
   );
 };
 
-const RichTextEditor = ({ content, onChange, placeholder = "Inhalt eingeben...", className, onImageUpload }) => {
-  // Mention suggestion configuration
+const RichTextEditor = ({ content, onChange, placeholder = "Inhalt eingeben...", className, onImageUpload, isFullscreen = false, onToggleFullscreen }) => {
+  // Mention suggestion configuration for articles (@)
   const mentionSuggestion = {
     char: '@',
     allowSpaces: true,
@@ -960,6 +983,72 @@ const RichTextEditor = ({ content, onChange, placeholder = "Inhalt eingeben...",
       return {
         onStart: props => {
           component = new ReactRenderer(MentionList, {
+            props,
+            editor: props.editor,
+          });
+
+          if (!props.clientRect) return;
+
+          popup = tippy('body', {
+            getReferenceClientRect: props.clientRect,
+            appendTo: () => document.body,
+            content: component.element,
+            showOnCreate: true,
+            interactive: true,
+            trigger: 'manual',
+            placement: 'bottom-start',
+          });
+        },
+
+        onUpdate(props) {
+          component?.updateProps(props);
+
+          if (!props.clientRect) return;
+
+          popup?.[0]?.setProps({
+            getReferenceClientRect: props.clientRect,
+          });
+        },
+
+        onKeyDown(props) {
+          if (props.event.key === 'Escape') {
+            popup?.[0]?.hide();
+            return true;
+          }
+
+          return component?.ref?.onKeyDown(props);
+        },
+
+        onExit() {
+          popup?.[0]?.destroy();
+          component?.destroy();
+        },
+      };
+    },
+  };
+
+  // User mention suggestion configuration (@@)
+  const userMentionSuggestion = {
+    char: '@@',
+    allowSpaces: true,
+    items: async ({ query }) => {
+      try {
+        const response = await axios.get(`${API}/users/search/mention`, {
+          params: { q: query || '', limit: 8 }
+        });
+        return response.data.results || [];
+      } catch (error) {
+        console.error('Failed to fetch users for mention:', error);
+        return [];
+      }
+    },
+    render: () => {
+      let component;
+      let popup;
+
+      return {
+        onStart: props => {
+          component = new ReactRenderer(UserMentionList, {
             props,
             editor: props.editor,
           });
@@ -1083,6 +1172,24 @@ const RichTextEditor = ({ content, onChange, placeholder = "Inhalt eingeben...",
           ];
         },
       }),
+      // User mention extension
+      Mention.extend({ name: 'userMention' }).configure({
+        HTMLAttributes: {
+          class: 'user-mention',
+        },
+        suggestion: userMentionSuggestion,
+        renderHTML({ options, node }) {
+          return [
+            'span',
+            {
+              ...options.HTMLAttributes,
+              'data-user-mention': '',
+              'data-user-id': node.attrs.id,
+            },
+            `@@${node.attrs.label}`,
+          ];
+        },
+      }),
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -1129,8 +1236,8 @@ const RichTextEditor = ({ content, onChange, placeholder = "Inhalt eingeben...",
 
   return (
     <div className={cn("border rounded-lg overflow-hidden bg-white shadow-sm", className)}>
-      <EditorToolbar editor={editor} onImageUpload={onImageUpload} />
-      <div className="overflow-auto max-h-[600px]">
+      <EditorToolbar editor={editor} onImageUpload={onImageUpload} isFullscreen={isFullscreen} onToggleFullscreen={onToggleFullscreen} />
+      <div className={cn("overflow-auto", isFullscreen ? "h-[calc(100vh-120px)]" : "max-h-[600px]")}>
         <EditorContent editor={editor} />
       </div>
     </div>

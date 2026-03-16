@@ -527,6 +527,22 @@ input:focus, textarea:focus, select:focus {
     color: hsl(0 84% 85%);
 }
 
+/* User Mentions */
+.user-mention {
+    background: linear-gradient(135deg, hsl(220 84% 95%) 0%, hsl(220 84% 92%) 100%);
+    color: hsl(220 84% 40%);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    border: 1px solid hsl(220 84% 85%);
+}
+
+.dark .user-mention {
+    background: linear-gradient(135deg, hsl(220 84% 20%) 0%, hsl(220 84% 15%) 100%);
+    color: hsl(220 84% 75%);
+    border-color: hsl(220 84% 30%);
+}
+
 /* Tippy.js mention popup styling */
 .tippy-box[data-theme~='default'] {
     background: transparent;

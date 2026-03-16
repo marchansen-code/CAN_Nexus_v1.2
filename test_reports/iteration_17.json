@@ -1,0 +1,95 @@
+{
+  "summary": "Iteration 17: Successfully tested all three new features - Fullscreen Editor, User Mentions (@@), and Article Versioning. All 17 backend tests and 24 new frontend tests passed. Also ran regression tests on existing specs (45 tests total), all passing.",
+  "mode": "generate",
+  "baseline_commit": "650a20cb219f094216d6fbfa2aa4c0f17888977a",
+  "head_commit": "012668c052909299678372bffba9092b21ffd37d",
+  "specs_created": [
+    "/app/tests/e2e/editor-new-features.spec.ts",
+    "/app/backend/tests/test_iteration17_features.py"
+  ],
+  "specs_updated": [
+    "/app/tests/e2e/article-editor.spec.ts"
+  ],
+  "quarantined_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration17_features.py",
+    "/app/test_reports/pytest/pytest_results_iter17.xml"
+  ],
+  "regression_results": {
+    "total_specs": 69,
+    "passed": 69,
+    "failed": 0,
+    "skipped": 0
+  },
+  "issues": [],
+  "action_items": [],
+  "updated_files": [
+    "/app/tests/e2e/editor-new-features.spec.ts",
+    "/app/backend/tests/test_iteration17_features.py",
+    "/app/tests/e2e/article-editor.spec.ts"
+  ],
+  "test_results": {
+    "backend": "100% (17/17 pytest tests passed)",
+    "frontend": "100% (69/69 Playwright tests passed across 7 spec files)"
+  },
+  "seed_data_creation": "Used existing article 'Verhalten bei der IT' (art_1378b6293c09) which has Version 1 for version testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All three new features verified working: 1) Fullscreen editor - toggles from both card header button and toolbar button, shows article title, can be closed with close button or Escape key, has full editor toolbar with 'Beenden' exit option. 2) User mentions (@@ trigger) - typing @@ in editor content shows user dropdown with name, email, and role badges (Admin/Editor), search filters users by query. 3) Article versioning - version history button only visible for existing articles, clicking opens dialog showing version list with version number, date/time, author name, Vorschau (preview) and Wiederherstellen (restore) buttons. Backend API endpoints tested: GET /api/users/search/mention, GET /api/versions/articles/{id}, GET /api/versions/articles/{id}/{version_id}, POST /api/versions/articles/{id}/{version_id}/restore",
+  "features_verified": {
+    "fullscreen_editor": {
+      "status": "VERIFIED",
+      "notes": "Fullscreen editor opens from both card header button (data-testid='fullscreen-editor-btn') and toolbar button. Shows article title with 'Vollbild-Editor' subtitle. Close button and Escape key both work. Full toolbar available including 'Beenden' button."
+    },
+    "user_mentions": {
+      "status": "VERIFIED",
+      "notes": "Typing @@ in editor triggers user dropdown showing user name, email, and role badges (Admin in red, Editor in blue). Search query filters results. Users are fetched from /api/users/search/mention endpoint."
+    },
+    "version_history": {
+      "status": "VERIFIED",
+      "notes": "Version history button (data-testid='version-history-btn') only visible for existing articles. Dialog shows version list with: version number, timestamp, author name, change summary badge (if any), Vorschau button, Wiederherstellen button. Article 'Verhalten bei der IT' has Version 1 created on 16.3.2026."
+    },
+    "version_creation_on_save": {
+      "status": "VERIFIED",
+      "notes": "Backend creates new version when article is updated via PUT /api/articles/{id}. Tested with pytest by creating article, updating it, and verifying version count increased."
+    },
+    "user_search_api": {
+      "status": "VERIFIED",
+      "notes": "GET /api/users/search/mention returns users with user_id, name, email, role. Supports q param for search, limit param. Excludes blocked users. Requires auth (returns 401 without)."
+    }
+  },
+  "api_tests_performed": {
+    "user_mention_search_no_query": "GET /api/users/search/mention returns up to 8 users sorted by name",
+    "user_mention_search_with_query": "GET /api/users/search/mention?q=marc returns matching users",
+    "user_mention_response_structure": "Response includes user_id, name, email, role fields",
+    "user_mention_limit": "limit param restricts result count",
+    "user_mention_auth_required": "Returns 401 without auth",
+    "version_list": "GET /api/versions/articles/{id} returns version list sorted by version_number desc",
+    "version_get_specific": "GET /api/versions/articles/{id}/{version_id} returns full version with title, content",
+    "version_404_invalid_article": "Returns 404 for nonexistent article",
+    "version_404_invalid_version": "Returns 404 for nonexistent version",
+    "version_creation_on_update": "PUT /api/articles/{id} creates new version entry"
+  },
+  "ui_tests_performed": {
+    "fullscreen_btn_new_article": "Fullscreen button visible in card header for new articles",
+    "fullscreen_btn_existing_article": "Fullscreen button visible for existing articles",
+    "fullscreen_opens": "Clicking button opens fullscreen editor overlay",
+    "fullscreen_title_shown": "Fullscreen shows article title and 'Vollbild-Editor' text",
+    "fullscreen_close_button": "Close button works to exit fullscreen",
+    "fullscreen_escape_key": "Escape key closes fullscreen",
+    "toolbar_vollbild_btn": "Toolbar Vollbild button also opens fullscreen",
+    "user_mention_trigger": "@@ triggers user dropdown in editor",
+    "user_dropdown_content": "Dropdown shows name, email, role badges",
+    "user_dropdown_admin_badge": "Admin badge shown for admin users",
+    "user_dropdown_editor_badge": "Editor badge shown for editor users",
+    "user_mention_search": "Typing search query filters dropdown results",
+    "version_btn_hidden_new": "Version history button hidden for new articles",
+    "version_btn_visible_existing": "Version history button visible for existing articles",
+    "version_dialog_opens": "Clicking button opens version history dialog",
+    "version_dialog_title": "Dialog shows 'Versionshistorie' title",
+    "version_entries_shown": "Dialog shows version entries with date and author",
+    "version_preview_btn": "Vorschau button visible",
+    "version_restore_btn": "Wiederherstellen button visible",
+    "version_dialog_close": "X button closes dialog"
+  }
+}

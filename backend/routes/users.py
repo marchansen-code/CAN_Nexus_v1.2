@@ -158,3 +158,30 @@ async def delete_user(user_id: str, current_user: User = Depends(get_current_use
     await db.users.delete_one({"user_id": user_id})
     
     return {"message": "Benutzer gelöscht"}
+
+
+
+@router.get("/search/mention")
+async def search_users_for_mention(q: str = "", limit: int = 8, user: User = Depends(get_current_user)):
+    """Search users for @mention suggestions."""
+    if not q or len(q) < 1:
+        # Return recent/active users if no query
+        users = await db.users.find(
+            {"is_blocked": {"$ne": True}},
+            {"_id": 0, "user_id": 1, "name": 1, "email": 1, "role": 1}
+        ).sort("name", 1).limit(limit).to_list(limit)
+        return {"results": users}
+    
+    # Search by name or email
+    users = await db.users.find(
+        {
+            "is_blocked": {"$ne": True},
+            "$or": [
+                {"name": {"$regex": q, "$options": "i"}},
+                {"email": {"$regex": q, "$options": "i"}}
+            ]
+        },
+        {"_id": 0, "user_id": 1, "name": 1, "email": 1, "role": 1}
+    ).limit(limit).to_list(limit)
+    
+    return {"results": users}
