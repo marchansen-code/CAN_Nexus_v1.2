@@ -153,6 +153,16 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **Automatische Artikel-Erstellung** - Weiterleitung zum Editor mit vorausgefülltem Inhalt
 - ✅ **TipTap-kompatibles HTML** - Formatierung für den Rich-Text-Editor optimiert
 
+### Vollwertiger PDF-Viewer (Iteration 25) - 16.03.2026
+- ✅ **React-PDF Integration** - Native PDF-Darstellung im Browser mit PDF.js
+- ✅ **PDF-Ansicht Tab** - Zeigt das PDF wie es ist
+- ✅ **Extrahierter Text Tab** - Zeigt den reinen Text aus dem PDF
+- ✅ **Seitennavigation** - Vor-/Zurück-Buttons und Seiteneingabe
+- ✅ **Zoom-Steuerung** - Vergrößern/Verkleinern (50%-300%)
+- ✅ **Drehen-Funktion** - PDF um 90° drehen
+- ✅ **Download-Button** - PDF herunterladen
+- ✅ **PDF-Streaming API** - Neuer Endpunkt `/api/documents/{id}/file`
+
 ## API Endpoints
 
 ### Groups (Admin only)
@@ -190,11 +200,10 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - **Passwort**: CanusaNexus2024!
 
 ## Test Coverage
+- Iteration 25: Backend 100% (22/22), Frontend 100% (34/34)
 - Iteration 24: Backend 100% (13/13), Frontend 100% (33/33)
 - Iteration 15: Manuell getestet (Tabellen-Dialog, Bearbeitungsoptionen)
 - Iteration 14: Backend 100% (8/8), Frontend 100% (23/23)
-- Iteration 13: Backend 100% (11/11), Frontend 100% (14/14)
-- Iteration 12: Backend 100% (19/19), Frontend 100%
 - Last tested: 16.03.2026
 
 ## Backlog
@@ -208,6 +217,7 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - [ ] OCR für gescannte PDFs
 - [ ] E-Mail-Benachrichtigungen
 - [x] ~~Hochwertige PDF-zu-HTML-Konvertierung~~ (Erledigt in Iteration 24)
+- [x] ~~Vollwertiger PDF-Viewer~~ (Erledigt in Iteration 25)
 
 ## Backend Architektur (nach Refactoring)
 
