@@ -122,6 +122,15 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **Vergleich mit Durchschnitt** - Zeigt ob Artikel über/unter Durchschnitt liegt
 - ✅ **Zugriffskontrolle** - Nur Autor und Admins können Analytics sehen
 
+### Erweiterte Suchfilter (Iteration 22) - 16.03.2026
+- ✅ **Tag-Dropdown mit Suche** - Tags können durchsucht und mehrfach ausgewählt werden
+- ✅ **Autor-Filter** - Artikel nach Autor filtern (mit Suchfunktion)
+- ✅ **Status-Filter** - Nach "Veröffentlicht" oder "Entwurf" filtern
+- ✅ **Wichtig-Markierung Filter** - Nur wichtige oder nicht-wichtige Artikel
+- ✅ **Zeitraum-Filter** - "Erstellt ab" und "Erstellt bis" mit Datepicker
+- ✅ **HTML-Bereinigung** - Content-Snippets zeigen reinen Text ohne HTML-Tags
+- ✅ **Aktive Filter Anzeige** - Zeigt aktive Filter als Badges an
+
 ## API Endpoints
 
 ### Groups (Admin only)

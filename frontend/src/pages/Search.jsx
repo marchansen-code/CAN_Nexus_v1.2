@@ -12,12 +12,44 @@ import {
   FolderTree,
   Eye,
   X,
-  Filter
+  Filter,
+  Calendar,
+  User,
+  AlertTriangle,
+  CheckCircle,
+  ChevronDown,
+  Check
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
 
 // Debounce hook
 const useDebounce = (value, delay) => {
@@ -34,6 +66,20 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
+// Helper to strip HTML tags
+const stripHtml = (html) => {
+  if (!html) return "";
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 const Search = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
@@ -42,23 +88,40 @@ const Search = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
+  
+  // Tags
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
-  const [showTagFilter, setShowTagFilter] = useState(false);
+  const [tagSearchOpen, setTagSearchOpen] = useState(false);
+  const [tagSearchQuery, setTagSearchQuery] = useState("");
+  
+  // Extended Filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [dateFrom, setDateFrom] = useState(null);
+  const [dateTo, setDateTo] = useState(null);
+  const [selectedAuthor, setSelectedAuthor] = useState("");
+  const [isImportant, setIsImportant] = useState(null); // null, true, false
+  const [selectedStatus, setSelectedStatus] = useState(""); // "", "published", "draft"
+  const [allUsers, setAllUsers] = useState([]);
+  const [authorSearchOpen, setAuthorSearchOpen] = useState(false);
 
   const debouncedQuery = useDebounce(query, 300);
 
-  // Load all tags
+  // Load all tags and users
   useEffect(() => {
-    const loadTags = async () => {
+    const loadData = async () => {
       try {
-        const response = await axios.get(`${API}/tags`);
-        setAllTags(response.data.tags || []);
+        const [tagsRes, usersRes] = await Promise.all([
+          axios.get(`${API}/tags`),
+          axios.get(`${API}/users`)
+        ]);
+        setAllTags(tagsRes.data.tags || []);
+        setAllUsers(usersRes.data || []);
       } catch (error) {
-        console.error("Failed to load tags:", error);
+        console.error("Failed to load data:", error);
       }
     };
-    loadTags();
+    loadData();
   }, []);
 
   // Load recent searches from localStorage
@@ -77,15 +140,29 @@ const Search = () => {
     localStorage.setItem('recentSearches', JSON.stringify(updated));
   };
 
+  // Count active filters
+  const activeFilterCount = [
+    selectedTags.length > 0,
+    dateFrom !== null,
+    dateTo !== null,
+    selectedAuthor !== "",
+    isImportant !== null,
+    selectedStatus !== ""
+  ].filter(Boolean).length;
+
   // Perform search
-  const performSearch = useCallback(async (searchQuery, tags = []) => {
-    if (!searchQuery && tags.length === 0) {
+  const performSearch = useCallback(async (searchQuery, filters = {}) => {
+    const { tags, author, important, status, from, to } = filters;
+    
+    const hasFilters = (tags && tags.length > 0) || author || important !== null || status || from || to;
+    
+    if (!searchQuery && !hasFilters) {
       setResults([]);
       setHasSearched(false);
       return;
     }
 
-    if (searchQuery && searchQuery.length < 2 && tags.length === 0) {
+    if (searchQuery && searchQuery.length < 2 && !hasFilters) {
       setResults([]);
       setHasSearched(false);
       return;
@@ -97,8 +174,13 @@ const Search = () => {
     try {
       const response = await axios.post(`${API}/search`, {
         query: searchQuery || "",
-        top_k: 20,
-        tags: tags.length > 0 ? tags : null
+        top_k: 30,
+        tags: tags && tags.length > 0 ? tags : null,
+        author_id: author || null,
+        is_important: important,
+        status: status || null,
+        date_from: from ? from.toISOString() : null,
+        date_to: to ? to.toISOString() : null
       });
       setResults(response.data.results || []);
       if (searchQuery) saveSearch(searchQuery);
@@ -110,10 +192,17 @@ const Search = () => {
     }
   }, []);
 
-  // Search on debounced query change or tag selection
+  // Search when filters change
   useEffect(() => {
-    performSearch(debouncedQuery, selectedTags);
-  }, [debouncedQuery, selectedTags, performSearch]);
+    performSearch(debouncedQuery, {
+      tags: selectedTags,
+      author: selectedAuthor,
+      important: isImportant,
+      status: selectedStatus,
+      from: dateFrom,
+      to: dateTo
+    });
+  }, [debouncedQuery, selectedTags, selectedAuthor, isImportant, selectedStatus, dateFrom, dateTo, performSearch]);
 
   // Toggle tag selection
   const toggleTag = (tag) => {
@@ -124,14 +213,14 @@ const Search = () => {
     );
   };
 
-  // Clear all tag filters
-  const clearTagFilters = () => {
+  // Clear all filters
+  const clearAllFilters = () => {
     setSelectedTags([]);
-  };
-
-  // Handle article click
-  const handleArticleClick = (articleId) => {
-    navigate(`/articles/${articleId}`);
+    setDateFrom(null);
+    setDateTo(null);
+    setSelectedAuthor("");
+    setIsImportant(null);
+    setSelectedStatus("");
   };
 
   // Clear search
@@ -141,42 +230,54 @@ const Search = () => {
     setHasSearched(false);
   };
 
-  // Get status badge color
-  const getStatusBadge = (status) => {
-    const variants = {
-      published: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      draft: "bg-slate-100 text-slate-700 border-slate-200",
-      review: "bg-amber-100 text-amber-700 border-amber-200"
-    };
-    const labels = {
-      published: "Veröffentlicht",
-      draft: "Entwurf",
-      review: "Review"
-    };
-    return (
-      <Badge variant="outline" className={variants[status] || variants.draft}>
-        {labels[status] || status}
-      </Badge>
-    );
+  // Navigate to article
+  const handleArticleClick = async (articleId) => {
+    try {
+      await axios.post(`${API}/articles/${articleId}/viewed`);
+    } catch (error) {
+      console.error("Failed to mark as viewed:", error);
+    }
+    navigate(`/articles/${articleId}`);
   };
 
   // Highlight matching text
-  const highlightMatch = (text, query) => {
-    if (!query || !text) return text;
-    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+  const highlightMatch = (text, searchTerm) => {
+    if (!searchTerm || !text) return text;
+    const cleanText = stripHtml(text);
+    const terms = searchTerm.toLowerCase().split(' ').filter(t => t.length > 1);
+    if (terms.length === 0) return cleanText;
+    
+    const regex = new RegExp(`(${terms.join('|')})`, 'gi');
+    const parts = cleanText.split(regex);
+    
     return parts.map((part, i) => 
-      part.toLowerCase() === query.toLowerCase() ? 
-        <mark key={i} className="bg-yellow-200 text-yellow-900 px-0.5 rounded">{part}</mark> : part
+      terms.some(term => part.toLowerCase() === term) 
+        ? <mark key={i} className="bg-yellow-200 px-0.5 rounded">{part}</mark>
+        : part
     );
   };
 
+  // Get status badge
+  const getStatusBadge = (status) => {
+    if (status === 'published') {
+      return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Veröffentlicht</Badge>;
+    }
+    if (status === 'draft') {
+      return <Badge variant="secondary">Entwurf</Badge>;
+    }
+    return null;
+  };
+
+  // Filter tags by search
+  const filteredTags = tagSearchQuery 
+    ? allTags.filter(tag => tag.toLowerCase().includes(tagSearchQuery.toLowerCase()))
+    : allTags;
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fadeIn" data-testid="search-page">
+    <div className="max-w-4xl mx-auto space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Wissenssuche
-        </h1>
+        <h1 className="text-3xl font-bold">Wissenssuche</h1>
         <p className="text-muted-foreground">
           Durchsuchen Sie alle Artikel, Dokumente und Kategorien
         </p>
@@ -198,25 +299,21 @@ const Search = () => {
             />
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
               {query && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={clearSearch}
-                >
+                <Button variant="ghost" size="icon" onClick={clearSearch}>
                   <X className="w-4 h-4" />
                 </Button>
               )}
               <Button
-                variant={showTagFilter ? "secondary" : "ghost"}
+                variant={showFilters ? "secondary" : "ghost"}
                 size="icon"
-                onClick={() => setShowTagFilter(!showTagFilter)}
-                className={selectedTags.length > 0 ? "text-red-600" : ""}
-                title="Nach Tags filtern"
+                onClick={() => setShowFilters(!showFilters)}
+                className={activeFilterCount > 0 ? "text-red-600" : ""}
+                title="Erweiterte Filter"
               >
                 <Filter className="w-4 h-4" />
-                {selectedTags.length > 0 && (
+                {activeFilterCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                    {selectedTags.length}
+                    {activeFilterCount}
                   </span>
                 )}
               </Button>
@@ -228,64 +325,314 @@ const Search = () => {
         </CardContent>
       </Card>
 
-      {/* Tag Filter Panel */}
-      {showTagFilter && (
-        <Card className="border-dashed animate-fadeIn">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium flex items-center gap-2">
-                <Tag className="w-4 h-4" />
-                Nach Tags filtern
+      {/* Extended Filters Panel */}
+      {showFilters && (
+        <Card className="border-dashed animate-in slide-in-from-top-2">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Erweiterte Filter
               </h3>
-              {selectedTags.length > 0 && (
-                <Button variant="ghost" size="sm" onClick={clearTagFilters}>
-                  Filter zurücksetzen
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                  Alle Filter zurücksetzen
                 </Button>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {allTags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant={selectedTags.includes(tag) ? "default" : "outline"}
-                  className={`cursor-pointer transition-colors ${
-                    selectedTags.includes(tag) 
-                      ? "bg-red-500 hover:bg-red-600 text-white" 
-                      : "hover:bg-red-50 hover:border-red-300"
-                  }`}
-                  onClick={() => toggleTag(tag)}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Tags Dropdown with Search */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <Tag className="w-3 h-3" />
+                  Tags
+                </Label>
+                <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={tagSearchOpen}
+                      className="w-full justify-between h-9 text-sm"
+                    >
+                      {selectedTags.length > 0 
+                        ? `${selectedTags.length} Tag${selectedTags.length > 1 ? 's' : ''} ausgewählt`
+                        : "Tags auswählen..."}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[250px] p-0" align="start">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Tag suchen..." 
+                        value={tagSearchQuery}
+                        onValueChange={setTagSearchQuery}
+                      />
+                      <CommandList>
+                        <CommandEmpty>Kein Tag gefunden.</CommandEmpty>
+                        <CommandGroup>
+                          {filteredTags.map((tag) => (
+                            <CommandItem
+                              key={tag}
+                              value={tag}
+                              onSelect={() => toggleTag(tag)}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedTags.includes(tag) ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {tag}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Author Dropdown with Search */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <User className="w-3 h-3" />
+                  Autor
+                </Label>
+                <Popover open={authorSearchOpen} onOpenChange={setAuthorSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={authorSearchOpen}
+                      className="w-full justify-between h-9 text-sm"
+                    >
+                      {selectedAuthor 
+                        ? allUsers.find(u => u.user_id === selectedAuthor)?.name || "Autor"
+                        : "Autor auswählen..."}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[250px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Autor suchen..." />
+                      <CommandList>
+                        <CommandEmpty>Kein Autor gefunden.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value=""
+                            onSelect={() => { setSelectedAuthor(""); setAuthorSearchOpen(false); }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", !selectedAuthor ? "opacity-100" : "opacity-0")} />
+                            Alle Autoren
+                          </CommandItem>
+                          {allUsers.map((author) => (
+                            <CommandItem
+                              key={author.user_id}
+                              value={author.name}
+                              onSelect={() => { setSelectedAuthor(author.user_id); setAuthorSearchOpen(false); }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedAuthor === author.user_id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {author.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Status */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Status
+                </Label>
+                <Select value={selectedStatus || "all"} onValueChange={(v) => setSelectedStatus(v === "all" ? "" : v)}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Status auswählen..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Status</SelectItem>
+                    <SelectItem value="published">Veröffentlicht</SelectItem>
+                    <SelectItem value="draft">Entwurf</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Important Filter */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Wichtig-Markierung
+                </Label>
+                <Select 
+                  value={isImportant === null ? "all" : isImportant.toString()} 
+                  onValueChange={(v) => setIsImportant(v === "all" ? null : v === "true")}
                 >
-                  {tag}
-                </Badge>
-              ))}
-              {allTags.length === 0 && (
-                <p className="text-sm text-muted-foreground">Keine Tags vorhanden</p>
-              )}
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Alle Artikel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Artikel</SelectItem>
+                    <SelectItem value="true">Nur wichtige Artikel</SelectItem>
+                    <SelectItem value="false">Nicht-wichtige Artikel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date From */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  Erstellt ab
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal h-9 text-sm",
+                        !dateFrom && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {dateFrom ? format(dateFrom, "dd.MM.yyyy", { locale: de }) : "Datum wählen"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={dateFrom}
+                      onSelect={setDateFrom}
+                      initialFocus
+                      locale={de}
+                    />
+                    {dateFrom && (
+                      <div className="p-2 border-t">
+                        <Button variant="ghost" size="sm" className="w-full" onClick={() => setDateFrom(null)}>
+                          Datum löschen
+                        </Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Date To */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  Erstellt bis
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal h-9 text-sm",
+                        !dateTo && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {dateTo ? format(dateTo, "dd.MM.yyyy", { locale: de }) : "Datum wählen"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={dateTo}
+                      onSelect={setDateTo}
+                      initialFocus
+                      locale={de}
+                    />
+                    {dateTo && (
+                      <div className="p-2 border-t">
+                        <Button variant="ghost" size="sm" className="w-full" onClick={() => setDateTo(null)}>
+                          Datum löschen
+                        </Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
+
+            {/* Selected Tags Display */}
+            {selectedTags.length > 0 && (
+              <>
+                <Separator />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-muted-foreground">Ausgewählte Tags:</span>
+                  {selectedTags.map((tag) => (
+                    <Badge 
+                      key={tag} 
+                      variant="default" 
+                      className="bg-red-500 hover:bg-red-600 cursor-pointer text-xs"
+                      onClick={() => toggleTag(tag)}
+                    >
+                      {tag}
+                      <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Selected Tags Display */}
-      {selectedTags.length > 0 && !showTagFilter && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-muted-foreground">Gefiltert nach:</span>
-          {selectedTags.map((tag) => (
-            <Badge 
-              key={tag} 
-              variant="default" 
-              className="bg-red-500 hover:bg-red-600 cursor-pointer"
-              onClick={() => toggleTag(tag)}
-            >
-              {tag}
-              <X className="w-3 h-3 ml-1" />
+      {/* Active Filters Summary (when filter panel is closed) */}
+      {!showFilters && activeFilterCount > 0 && (
+        <div className="flex items-center gap-2 flex-wrap text-sm">
+          <span className="text-muted-foreground">Aktive Filter:</span>
+          {selectedTags.length > 0 && (
+            <Badge variant="outline" className="gap-1">
+              <Tag className="w-3 h-3" />
+              {selectedTags.length} Tag{selectedTags.length > 1 ? 's' : ''}
             </Badge>
-          ))}
+          )}
+          {selectedAuthor && (
+            <Badge variant="outline" className="gap-1">
+              <User className="w-3 h-3" />
+              {allUsers.find(u => u.user_id === selectedAuthor)?.name}
+            </Badge>
+          )}
+          {selectedStatus && (
+            <Badge variant="outline" className="gap-1">
+              <CheckCircle className="w-3 h-3" />
+              {selectedStatus === "published" ? "Veröffentlicht" : "Entwurf"}
+            </Badge>
+          )}
+          {isImportant !== null && (
+            <Badge variant="outline" className="gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              {isImportant ? "Wichtig" : "Nicht wichtig"}
+            </Badge>
+          )}
+          {(dateFrom || dateTo) && (
+            <Badge variant="outline" className="gap-1">
+              <Calendar className="w-3 h-3" />
+              {dateFrom && format(dateFrom, "dd.MM.yy", { locale: de })}
+              {dateFrom && dateTo && " - "}
+              {dateTo && format(dateTo, "dd.MM.yy", { locale: de })}
+            </Badge>
+          )}
+          <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-6 px-2 text-xs">
+            Alle löschen
+          </Button>
         </div>
       )}
 
-      {/* Recent Searches (when no query) */}
-      {!query && recentSearches.length > 0 && (
+      {/* Recent Searches (when no query and no filters) */}
+      {!query && activeFilterCount === 0 && recentSearches.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <Clock className="w-4 h-4" />
@@ -340,25 +687,34 @@ const Search = () => {
                           <h3 className="font-semibold text-lg group-hover:text-red-600 transition-colors truncate">
                             {highlightMatch(result.title, query)}
                           </h3>
+                          {result.is_important && (
+                            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" title="Wichtig" />
+                          )}
                         </div>
 
-                        {/* Snippet */}
+                        {/* Snippet - HTML stripped */}
                         <p className="text-sm text-muted-foreground line-clamp-2 pl-8">
-                          {highlightMatch(result.content_snippet, query)}
+                          {highlightMatch(stripHtml(result.content_snippet), query)}
                         </p>
 
                         {/* Meta */}
-                        <div className="flex items-center gap-3 pl-8 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3 pl-8 text-xs text-muted-foreground flex-wrap">
                           {result.category_name && (
                             <span className="flex items-center gap-1">
                               <FolderTree className="w-3 h-3" />
                               {result.category_name}
                             </span>
                           )}
-                          {result.updated_at && (
+                          {result.author_name && (
+                            <span className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              {result.author_name}
+                            </span>
+                          )}
+                          {result.created_at && (
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
-                              {new Date(result.updated_at).toLocaleDateString('de-DE')}
+                              {new Date(result.created_at).toLocaleDateString('de-DE')}
                             </span>
                           )}
                           {result.view_count > 0 && (
@@ -417,8 +773,8 @@ const Search = () => {
                 <SearchIcon className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
                 <h3 className="font-medium text-lg mb-2">Keine Ergebnisse</h3>
                 <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                  Für "{query}" wurden keine Artikel gefunden. 
-                  Versuchen Sie es mit anderen Suchbegriffen oder prüfen Sie die Schreibweise.
+                  {query ? `Für "${query}" wurden keine Artikel gefunden.` : "Keine Artikel gefunden."} 
+                  Versuchen Sie andere Suchbegriffe oder Filter.
                 </p>
               </CardContent>
             </Card>
@@ -427,14 +783,15 @@ const Search = () => {
       )}
 
       {/* Initial State */}
-      {!hasSearched && !query && (
+      {!hasSearched && !query && activeFilterCount === 0 && (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
             <SearchIcon className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
             <h3 className="font-medium text-lg mb-2">Suche starten</h3>
             <p className="text-muted-foreground text-sm max-w-md mx-auto">
-              Geben Sie einen Suchbegriff ein, um Artikel zu finden. 
-              Die Suche durchsucht Titel, Inhalt und Tags.
+              Geben Sie einen Suchbegriff ein, um Artikel zu finden. Die Suche
+              durchsucht Titel, Inhalt und Tags. Nutzen Sie die erweiterten Filter
+              für präzisere Ergebnisse.
             </p>
           </CardContent>
         </Card>
