@@ -367,8 +367,12 @@ const Documents = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      toast.error("Bitte laden Sie nur PDF-Dateien hoch");
+    // Check if file type is supported
+    const supportedExtensions = ['.pdf', '.doc', '.docx', '.txt', '.csv', '.xls', '.xlsx'];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!supportedExtensions.includes(ext)) {
+      toast.error(`Dateityp nicht unterstützt. Erlaubte Formate: PDF, DOC, DOCX, TXT, CSV, XLS, XLSX`);
       return;
     }
 
@@ -561,7 +565,7 @@ const Documents = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dokumente</h1>
           <p className="text-muted-foreground mt-1">
-            PDF-Dokumente hochladen und organisieren
+            Dokumente hochladen und organisieren
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -993,9 +997,9 @@ const Documents = () => {
             <Tabs defaultValue="viewer" className="flex-1 flex flex-col min-h-0">
               <div className="px-6 pt-2 flex items-center justify-between border-b flex-shrink-0">
                 <TabsList>
-                  <TabsTrigger value="viewer" data-testid="pdf-viewer-tab">
+                  <TabsTrigger value="viewer" data-testid="document-viewer-tab">
                     <Eye className="w-4 h-4 mr-2" />
-                    PDF-Ansicht
+                    Dokument-Ansicht
                   </TabsTrigger>
                   <TabsTrigger value="text" data-testid="text-preview-tab">
                     <FileText className="w-4 h-4 mr-2" />

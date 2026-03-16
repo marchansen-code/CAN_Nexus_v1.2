@@ -103,10 +103,28 @@ const DocumentImportDialog = ({ open, onClose, onImport }) => {
           const docResponse = await axios.get(`${API}/documents/${docId}`);
           if (docResponse.data.status === 'completed') {
             clearInterval(pollInterval);
-            setSelectedDoc(docResponse.data);
-            setActiveTab('existing');
-            loadDocuments();
-            toast.success('Datei erfolgreich verarbeitet');
+            toast.success('Datei erfolgreich verarbeitet. Importiere...');
+            
+            // Automatically import the content after successful upload
+            try {
+              const contentResponse = await axios.get(`${API}/documents/${docId}/content`);
+              onImport({
+                html: contentResponse.data.html_content,
+                text: contentResponse.data.extracted_text,
+                filename: contentResponse.data.filename,
+                fileType: contentResponse.data.file_type
+              });
+              toast.success(`"${docResponse.data.filename}" wurde importiert`);
+              loadDocuments();
+              onClose();
+            } catch (importErr) {
+              console.error('Import after upload failed:', importErr);
+              toast.error('Import fehlgeschlagen');
+              // Fallback: show in existing docs
+              setSelectedDoc(docResponse.data);
+              setActiveTab('existing');
+              loadDocuments();
+            }
           } else if (docResponse.data.status === 'failed' || attempts >= maxAttempts) {
             clearInterval(pollInterval);
             toast.error('Verarbeitung fehlgeschlagen');

@@ -89,7 +89,7 @@ test.describe('Multi-format Document Support', () => {
       }
     });
 
-    test('should have tabs for PDF-Ansicht and Extrahierter Text', async ({ page }) => {
+    test('should have tabs for Dokument-Ansicht and Extrahierter Text', async ({ page }) => {
       await page.click('text=Dokumente');
       await page.waitForTimeout(2000);
       
@@ -99,9 +99,9 @@ test.describe('Multi-format Document Support', () => {
         await viewBtns.first().click();
         await page.waitForTimeout(2000);
         
-        // Verify tabs exist
-        await expect(page.locator('[data-testid="pdf-viewer-tab"]')).toBeVisible();
-        await expect(page.locator('[data-testid="text-preview-tab"]')).toBeVisible();
+        // Verify tabs exist - Changed from PDF-Ansicht to Dokument-Ansicht in Bug Fix 3
+        await expect(page.getByTestId('document-viewer-tab')).toBeVisible();
+        await expect(page.getByTestId('text-preview-tab')).toBeVisible();
       }
     });
 

@@ -205,6 +205,7 @@ async def process_pdf(file_path: str) -> dict:
 async def process_word(file_path: str) -> dict:
     """Process Word document (DOC/DOCX)."""
     from docx import Document as DocxDocument
+    import html as html_module
     
     extracted_text = ""
     html_content = ""
@@ -216,13 +217,15 @@ async def process_word(file_path: str) -> dict:
             text = para.text.strip()
             if text:
                 extracted_text += text + "\n\n"
+                # Escape HTML entities to prevent rendering issues
+                escaped_text = html_module.escape(text)
                 
                 # Check style for headings
-                if para.style.name.startswith('Heading'):
+                if para.style and para.style.name and para.style.name.startswith('Heading'):
                     level = para.style.name[-1] if para.style.name[-1].isdigit() else '2'
-                    html_content += f"<h{level}>{text}</h{level}>"
+                    html_content += f"<h{level}>{escaped_text}</h{level}>"
                 else:
-                    html_content += f"<p>{text}</p>"
+                    html_content += f"<p>{escaped_text}</p>"
         
         # Process tables
         for table in doc.tables:
@@ -232,7 +235,7 @@ async def process_word(file_path: str) -> dict:
                 cell_class = 'border border-slate-300 p-2 bg-slate-50 font-medium' if row_idx == 0 else 'border border-slate-300 p-2'
                 table_html += "<tr>"
                 for cell in row.cells:
-                    cell_text = cell.text.strip()
+                    cell_text = html_module.escape(cell.text.strip())
                     table_html += f"<{tag} class='{cell_class}'>{cell_text}</{tag}>"
                 table_html += "</tr>"
             table_html += "</table>"
