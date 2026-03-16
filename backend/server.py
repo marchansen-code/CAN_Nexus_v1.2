@@ -14,7 +14,7 @@ from database import db, client, DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD, DE
 from dependencies import get_password_hash
 
 # Route modules
-from routes import auth, users, groups, categories, articles, search, documents, recycle_bin, images, stats, backup, exports
+from routes import auth, users, groups, categories, articles, search, documents, document_folders, recycle_bin, images, stats, backup, exports
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -43,6 +43,7 @@ app.include_router(categories.router, prefix="/api")
 app.include_router(articles.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
+app.include_router(document_folders.router, prefix="/api")
 app.include_router(recycle_bin.router, prefix="/api")
 app.include_router(images.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")

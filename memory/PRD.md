@@ -131,6 +131,15 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **HTML-Bereinigung** - Content-Snippets zeigen reinen Text ohne HTML-Tags
 - ✅ **Aktive Filter Anzeige** - Zeigt aktive Filter als Badges an
 
+### Dokument-Ordnerstruktur (Iteration 23) - 16.03.2026
+- ✅ **Hierarchische Ordnerstruktur** - Ordner mit beliebiger Verschachtelungstiefe
+- ✅ **Split-View Design** - Links Ordnerbaum, rechts Dokumentenliste (wie Artikel)
+- ✅ **Ordner erstellen** - Admins und Editoren können neue Ordner anlegen
+- ✅ **Unterordner erstellen** - Per "+" Button beim Überfahren eines Ordners
+- ✅ **Ordner beim Upload wählen** - Dialog zum Auswählen/Erstellen eines Ordners
+- ✅ **Dokumente verschieben** - Per Kontextmenü in anderen Ordner verschieben
+- ✅ **Ordner bearbeiten/löschen** - Für Admins mit Fallback für Inhalte
+
 ## API Endpoints
 
 ### Groups (Admin only)

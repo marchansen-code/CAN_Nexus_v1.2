@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 async def upload_document(
     file: UploadFile = File(...),
     target_language: str = "de",
+    folder_id: str = None,
     force: bool = False,
     user: User = Depends(get_current_user)
 ):
@@ -41,6 +42,12 @@ async def upload_document(
         if old_path and os.path.exists(old_path):
             os.remove(old_path)
         await db.documents.delete_one({"document_id": existing_doc["document_id"]})
+    
+    # Verify folder exists if provided
+    if folder_id:
+        folder = await db.document_folders.find_one({"folder_id": folder_id})
+        if not folder:
+            raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
     
     content = await file.read()
     doc_id = f"doc_{uuid.uuid4().hex[:12]}"
@@ -62,6 +69,7 @@ async def upload_document(
     doc_dict["created_at"] = doc_dict["created_at"].isoformat()
     doc_dict["file_path"] = permanent_path
     doc_dict["file_size"] = len(content)
+    doc_dict["folder_id"] = folder_id
     
     await db.documents.insert_one(doc_dict)
     
@@ -70,6 +78,7 @@ async def upload_document(
     return {
         "document_id": doc_id,
         "filename": doc.filename,
+        "folder_id": folder_id,
         "status": "pending",
         "message": "Dokument wird verarbeitet"
     }
@@ -203,3 +212,27 @@ async def delete_document(document_id: str, user: User = Depends(get_current_use
         }}
     )
     return {"message": "Dokument in Papierkorb verschoben"}
+
+
+@router.put("/{document_id}/move")
+async def move_document(document_id: str, folder_id: str = None, user: User = Depends(get_current_user)):
+    """Move a document to a different folder."""
+    if user.role not in ["admin", "editor"]:
+        raise HTTPException(status_code=403, detail="Nur Editoren und Administratoren können Dokumente verschieben")
+    
+    doc = await db.documents.find_one({"document_id": document_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Dokument nicht gefunden")
+    
+    # Verify folder exists if provided
+    if folder_id:
+        folder = await db.document_folders.find_one({"folder_id": folder_id})
+        if not folder:
+            raise HTTPException(status_code=404, detail="Ordner nicht gefunden")
+    
+    await db.documents.update_one(
+        {"document_id": document_id},
+        {"$set": {"folder_id": folder_id}}
+    )
+    
+    return {"message": "Dokument verschoben", "folder_id": folder_id}
