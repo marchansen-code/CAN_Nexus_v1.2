@@ -2,6 +2,7 @@
 Document upload and processing routes for the CANUSA Knowledge Hub API.
 """
 from fastapi import APIRouter, HTTPException, Depends, File, UploadFile
+from fastapi.responses import FileResponse
 from typing import Dict, List
 from datetime import datetime, timezone
 import asyncio
@@ -212,6 +213,27 @@ async def delete_document(document_id: str, user: User = Depends(get_current_use
         }}
     )
     return {"message": "Dokument in Papierkorb verschoben"}
+
+
+@router.get("/{document_id}/file")
+async def get_document_file(document_id: str, user: User = Depends(get_current_user)):
+    """Get the actual PDF file for viewing."""
+    doc = await db.documents.find_one(
+        {"document_id": document_id, "deleted_at": {"$exists": False}},
+        {"_id": 0}
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Dokument nicht gefunden")
+    
+    file_path = doc.get("file_path")
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="PDF-Datei nicht gefunden")
+    
+    return FileResponse(
+        path=file_path,
+        media_type="application/pdf",
+        filename=doc.get("filename", "document.pdf")
+    )
 
 
 @router.put("/{document_id}/move")

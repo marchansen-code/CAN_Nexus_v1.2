@@ -1,0 +1,89 @@
+{
+  "summary": "Iteration 16: Successfully tested PDF Viewer feature - all 34 frontend tests and 22 backend tests passed. New PDF viewer component with react-pdf library working correctly.",
+  "mode": "update",
+  "baseline_commit": "198c7a5da7da8ffefc39e78fc4a8150b504b284e",
+  "head_commit": "650a20cb219f094216d6fbfa2aa4c0f17888977a",
+  "specs_created": [
+    "/app/tests/e2e/pdf-viewer.spec.ts"
+  ],
+  "specs_updated": [],
+  "quarantined_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration16_pdf_viewer.py",
+    "/app/test_reports/pytest/pytest_results_iter16.xml"
+  ],
+  "regression_results": {
+    "total_specs": 34,
+    "passed": 34,
+    "failed": 0,
+    "skipped": 0
+  },
+  "issues": [],
+  "action_items": [],
+  "updated_files": [
+    "/app/tests/e2e/pdf-viewer.spec.ts",
+    "/app/backend/tests/test_iteration16_pdf_viewer.py"
+  ],
+  "test_results": {
+    "backend": "100% (22/22 pytest tests passed)",
+    "frontend": "100% (34/34 Playwright tests passed across 4 spec files)"
+  },
+  "seed_data_creation": "Used existing test PDF document (doc_71438fad9dc7) for PDF viewer testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All PDF viewer features verified working: 1) PDF viewer tabs (PDF-Ansicht and Extrahierter Text) display correctly in document preview dialog, 2) PDF-Ansicht tab is selected by default, 3) Tab switching works correctly, 4) PDF viewer toolbar with controls (page navigation, zoom in/out, rotate, download) all visible and functional, 5) Zoom controls work correctly (100% -> 125% on zoom in, 100% -> 75% on zoom out), 6) PDF content loads and renders using react-pdf library, 7) Page count displays after PDF loads, 8) Extracted text tab shows document text content, 9) Backend /api/documents/{id}/file endpoint returns valid PDF files with correct content-type and content-disposition headers.",
+  "features_verified": {
+    "pdf_viewer_tabs": {
+      "status": "VERIFIED",
+      "notes": "Document preview dialog shows two tabs: PDF-Ansicht (PDF viewer) and Extrahierter Text (extracted text). Default tab is PDF-Ansicht."
+    },
+    "pdf_viewer_controls": {
+      "status": "VERIFIED",
+      "notes": "PDF viewer toolbar includes: page navigation (prev/next buttons, page input), zoom controls (zoom in/out with percentage display), rotate button, and download button."
+    },
+    "pdf_viewer_zoom": {
+      "status": "VERIFIED",
+      "notes": "Zoom in increases from 100% to 125%, zoom out decreases from 100% to 75%. Percentage display updates correctly."
+    },
+    "pdf_content_loading": {
+      "status": "VERIFIED",
+      "notes": "react-pdf library loads and renders PDF content. Document and Page components render correctly. Page count displays after load."
+    },
+    "tab_switching": {
+      "status": "VERIFIED",
+      "notes": "Can switch between PDF-Ansicht and Extrahierter Text tabs. Tab states update correctly (active/inactive)."
+    },
+    "extracted_text_tab": {
+      "status": "VERIFIED",
+      "notes": "Extracted text tab shows document text in a pre-formatted block."
+    },
+    "pdf_file_endpoint": {
+      "status": "VERIFIED",
+      "notes": "GET /api/documents/{id}/file returns PDF file with application/pdf content-type. File starts with %PDF- header. Authentication required."
+    },
+    "convert_to_article": {
+      "status": "VERIFIED",
+      "notes": "Existing 'In Artikel umwandeln' button still works - navigates to article editor with PDF content pre-filled."
+    }
+  },
+  "api_tests_performed": {
+    "pdf_file_success": "GET /api/documents/{id}/file - Returns valid PDF file with correct headers",
+    "pdf_file_content_type": "Verifies application/pdf content-type header",
+    "pdf_file_valid_pdf": "Verifies file content starts with %PDF- header",
+    "pdf_file_content_disposition": "Response includes filename in content-disposition header",
+    "pdf_file_404": "Non-existent document returns 404",
+    "pdf_file_auth": "Requires authentication (401 without)",
+    "pdf_convert_to_html": "GET /api/documents/{id}/convert-to-html still works correctly"
+  },
+  "ui_tests_performed": {
+    "pdf_viewer_tabs_visible": "Both PDF-Ansicht and Extrahierter Text tabs visible in dialog",
+    "pdf_viewer_tab_default": "PDF-Ansicht tab is active by default",
+    "tab_switch_functionality": "Tab switching updates active state correctly",
+    "toolbar_controls_visible": "All toolbar controls (prev, next, page input, zoom out, zoom in, rotate, download) are visible",
+    "zoom_in_works": "Clicking zoom in increases percentage from 100% to 125%",
+    "zoom_out_works": "Clicking zoom out decreases percentage from 100% to 75%",
+    "pdf_content_renders": "react-pdf Document and Page components render",
+    "page_count_displays": "Page count (/ X format) appears after PDF loads",
+    "extracted_text_shows": "Extracted text tab shows document content"
+  }
+}

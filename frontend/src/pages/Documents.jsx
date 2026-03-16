@@ -77,6 +77,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PdfViewer from "@/components/PdfViewer";
 
 // Status components
 const StatusIcon = ({ status }) => {
@@ -977,53 +979,71 @@ const Documents = () => {
       {/* Document Preview Dialog */}
       {selectedDoc && (
         <Dialog open={!!selectedDoc} onOpenChange={() => setSelectedDoc(null)}>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
-            <DialogHeader>
+          <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
               <DialogTitle>{selectedDoc.filename}</DialogTitle>
               <DialogDescription>
-                Verarbeitet am {formatDate(selectedDoc.processed_at)}
+                Verarbeitet am {formatDate(selectedDoc.processed_at)} • {selectedDoc.page_count || 0} Seiten
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-6">
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-2 pb-4 border-b">
-                <Button
-                  onClick={handleConvertToArticle}
-                  disabled={converting}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                  data-testid="convert-to-article-btn"
-                >
-                  {converting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Konvertiere...
-                    </>
-                  ) : (
-                    <>
-                      <FileEdit className="w-4 h-4 mr-2" />
-                      In Artikel umwandeln
-                    </>
-                  )}
-                </Button>
-                <p className="text-sm text-muted-foreground flex items-center">
-                  <ArrowRight className="w-4 h-4 mr-1" />
-                  Erstellt einen bearbeitbaren Artikel aus dem PDF
-                </p>
+            <Tabs defaultValue="viewer" className="flex-1 flex flex-col min-h-0">
+              <div className="px-6 pt-2 flex items-center justify-between border-b flex-shrink-0">
+                <TabsList>
+                  <TabsTrigger value="viewer" data-testid="pdf-viewer-tab">
+                    <Eye className="w-4 h-4 mr-2" />
+                    PDF-Ansicht
+                  </TabsTrigger>
+                  <TabsTrigger value="text" data-testid="text-preview-tab">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Extrahierter Text
+                  </TabsTrigger>
+                </TabsList>
+                
+                <div className="flex items-center gap-2 py-2">
+                  <Button
+                    onClick={handleConvertToArticle}
+                    disabled={converting}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                    data-testid="convert-to-article-btn"
+                  >
+                    {converting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Konvertiere...
+                      </>
+                    ) : (
+                      <>
+                        <FileEdit className="w-4 h-4 mr-2" />
+                        In Artikel umwandeln
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
               
-              {selectedDoc.extracted_text && (
-                <div>
-                  <h4 className="font-semibold mb-2">Extrahierter Text (Vorschau)</h4>
-                  <div className="bg-muted p-4 rounded-lg max-h-60 overflow-auto">
+              <TabsContent value="viewer" className="flex-1 m-0 min-h-0">
+                <PdfViewer 
+                  url={`${API}/documents/${selectedDoc.document_id}/file`}
+                  filename={selectedDoc.filename}
+                  className="h-full"
+                />
+              </TabsContent>
+              
+              <TabsContent value="text" className="flex-1 m-0 p-6 overflow-auto">
+                {selectedDoc.extracted_text ? (
+                  <div className="bg-muted p-4 rounded-lg">
                     <pre className="whitespace-pre-wrap text-sm text-muted-foreground">
-                      {selectedDoc.extracted_text.substring(0, 3000)}
-                      {selectedDoc.extracted_text.length > 3000 && "..."}
+                      {selectedDoc.extracted_text}
                     </pre>
                   </div>
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div className="text-center text-muted-foreground py-8">
+                    Kein extrahierter Text verfügbar
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       )}
