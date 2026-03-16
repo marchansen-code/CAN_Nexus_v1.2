@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/App";
@@ -16,6 +16,26 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // Check if user already has an active session
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        const response = await axios.get(`${API}/auth/me`);
+        if (response.data && response.data.user_id) {
+          // User is already logged in, redirect to dashboard
+          navigate("/dashboard", { replace: true });
+        }
+      } catch (error) {
+        // Not logged in, show login form
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+
+    checkExistingSession();
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -43,6 +63,15 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  // Show loading while checking existing session
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">

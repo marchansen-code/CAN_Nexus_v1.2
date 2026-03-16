@@ -93,6 +93,13 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **Endgültig löschen** - Items können vor Ablauf der 30 Tage dauerhaft entfernt werden
 - ✅ **Auto-Cleanup** - Button zum Entfernen aller Items älter als 30 Tage
 
+### Sicherheit & Session-Management (Iteration 18) - 16.03.2026
+- ✅ **Fail2Ban-kompatibles Logging** - Fehlgeschlagene Anmeldeversuche werden geloggt
+- ✅ **Log-Format**: `YYYY-MM-DD HH:MM:SS WARNING [AUTH] Failed login from IP for user`
+- ✅ **Log-Datei**: `/app/backend/logs/auth_failures.log`
+- ✅ **Session-Redirect** - Bei aktiver Session automatische Weiterleitung zum Dashboard
+- ✅ **Root-URL Handling** - `/` leitet eingeloggte User zum Dashboard weiter
+
 ## API Endpoints
 
 ### Groups (Admin only)

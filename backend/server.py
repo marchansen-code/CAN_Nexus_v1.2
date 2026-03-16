@@ -17,6 +17,20 @@ from passlib.context import CryptContext
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Setup Fail2Ban-compatible logging for failed login attempts
+LOG_DIR = ROOT_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+
+# Configure auth logger for failed logins
+auth_logger = logging.getLogger("auth_failures")
+auth_logger.setLevel(logging.WARNING)
+auth_handler = logging.FileHandler(LOG_DIR / "auth_failures.log")
+auth_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s [AUTH] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+))
+auth_logger.addHandler(auth_handler)
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -237,17 +251,28 @@ class PasswordChange(BaseModel):
     new_password: str
 
 @api_router.post("/auth/login")
-async def login(login_data: LoginRequest, response: Response):
+async def login(login_data: LoginRequest, response: Response, request: Request):
     """Login with email and password"""
+    # Get client IP for logging
+    client_ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else "unknown")
+    if "," in client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+    
     user = await db.users.find_one({"email": login_data.email.lower()}, {"_id": 0})
     
     if not user:
+        # Log failed attempt - user not found
+        auth_logger.warning(f"Failed login attempt from {client_ip} for unknown user: {login_data.email}")
         raise HTTPException(status_code=401, detail="Ungültige E-Mail oder Passwort")
     
     if not verify_password(login_data.password, user.get("password_hash", "")):
+        # Log failed attempt - wrong password
+        auth_logger.warning(f"Failed login attempt from {client_ip} for user: {login_data.email} (invalid password)")
         raise HTTPException(status_code=401, detail="Ungültige E-Mail oder Passwort")
     
     if user.get("is_blocked", False):
+        # Log blocked user attempt
+        auth_logger.warning(f"Blocked user login attempt from {client_ip} for user: {login_data.email}")
         raise HTTPException(status_code=403, detail="Ihr Konto wurde gesperrt")
     
     # Create session
@@ -274,6 +299,9 @@ async def login(login_data: LoginRequest, response: Response):
         path="/",
         max_age=days * 24 * 60 * 60
     )
+    
+    # Log successful login (info level, different file)
+    logging.info(f"Successful login from {client_ip} for user: {login_data.email}")
     
     # Return user without password hash
     return {
