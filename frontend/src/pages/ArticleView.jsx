@@ -26,7 +26,8 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  X
+  X,
+  History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -103,6 +104,10 @@ const ArticleView = () => {
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  
+  // Version history state
+  const [versions, setVersions] = useState([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
 
   const canEdit = user?.role === "admin" || user?.role === "editor";
   const isAdmin = user?.role === "admin";
@@ -154,12 +159,27 @@ const ArticleView = () => {
       
       // Load comments
       fetchComments();
+      
+      // Load version history
+      fetchVersions();
     } catch (error) {
       console.error("Failed to fetch data:", error);
       toast.error("Artikel konnte nicht geladen werden");
       navigate("/articles");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchVersions = async () => {
+    setVersionsLoading(true);
+    try {
+      const response = await axios.get(`${API}/versions/articles/${id}`);
+      setVersions(response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch versions:", error);
+    } finally {
+      setVersionsLoading(false);
     }
   };
 
@@ -580,6 +600,69 @@ const ArticleView = () => {
                 <p>Kommentare sind für diesen Artikel deaktiviert.</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Version History */}
+        {versions.length > 0 && (
+          <div className="mt-12 border-t pt-8" data-testid="version-history-section">
+            <div className="flex items-center gap-2 mb-4">
+              <History className="w-5 h-5 text-muted-foreground" />
+              <h3 className="font-semibold text-lg">Änderungshistorie</h3>
+            </div>
+            <div className="relative">
+              {/* Timeline line */}
+              <div className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-slate-200 dark:bg-slate-700" />
+              
+              <div className="space-y-4">
+                {versions.map((version, index) => (
+                  <div 
+                    key={version.version_id} 
+                    className="flex gap-4 relative"
+                    data-testid={`version-entry-${version.version_number}`}
+                  >
+                    {/* Timeline dot */}
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 ${
+                      index === 0 
+                        ? 'bg-indigo-500 text-white' 
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                    }`}>
+                      <span className="text-xs font-medium">{version.version_number}</span>
+                    </div>
+                    
+                    {/* Version info */}
+                    <div className="flex-1 pb-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium">
+                          {new Date(version.created_at).toLocaleDateString('de-DE', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          um {new Date(version.created_at).toLocaleTimeString('de-DE', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })} Uhr
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <User className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          {version.created_by_name}
+                        </span>
+                        {version.change_summary && (
+                          <Badge variant="outline" className="text-xs">
+                            {version.change_summary}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </article>

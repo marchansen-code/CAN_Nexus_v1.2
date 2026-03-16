@@ -90,17 +90,22 @@ test.describe('@-Mention Feature (Article Linking)', () => {
     await editor.click();
     await page.keyboard.type('@test');
     
-    // Wait for dropdown
-    await expect(page.locator('.tippy-box, [data-tippy-root]').first()).toBeVisible({ timeout: 5000 });
+    // Wait for dropdown - tippy renders the dropdown as a child of body with tippy-box class
+    const tippyDropdown = page.locator('.tippy-box').first();
+    await expect(tippyDropdown).toBeVisible({ timeout: 5000 });
+    
+    // Wait a bit for content to render
+    await page.waitForTimeout(500);
     
     // Check if draft indicator is shown for draft articles
-    const dropdown = page.locator('.tippy-box, [data-tippy-root]').first();
-    const hasDraftIndicator = await dropdown.getByText('(Entwurf)').count();
+    const hasDraftIndicator = await tippyDropdown.getByText('(Entwurf)').count();
     
     // At least one draft article should exist in results based on our test data
     console.log(`Found ${hasDraftIndicator} draft indicators in dropdown`);
-    // This test just verifies the dropdown shows status - not that there must be drafts
-    expect(await dropdown.locator('button').count()).toBeGreaterThan(0);
+    // Verify dropdown has buttons
+    const buttonCount = await tippyDropdown.locator('button').count();
+    console.log(`Found ${buttonCount} buttons in dropdown`);
+    expect(buttonCount).toBeGreaterThan(0);
   });
 
   test('should navigate with keyboard in dropdown', async ({ page }) => {

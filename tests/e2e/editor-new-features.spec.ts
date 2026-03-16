@@ -1,8 +1,10 @@
 /**
- * Iteration 17: Frontend tests for new features:
+ * Iteration 17-18: Frontend tests for editor features:
  * 1. Fullscreen editor toggle
  * 2. User mentions (@@) dropdown
- * 3. Version history dialog
+ * 
+ * Note: Version history was moved from editor to ArticleView in iteration 18.
+ * See article-view-version-history.spec.ts for version history tests.
  */
 import { test, expect } from '@playwright/test';
 
@@ -209,100 +211,25 @@ test.describe('Article Editor New Features', () => {
     });
   });
 
-  test.describe('Version History', () => {
-    test('version history button is hidden for new articles', async ({ page }) => {
-      await page.goto(`${BASE_URL}/articles/new`, { waitUntil: 'domcontentloaded' });
+  test.describe('Editor - No Version History Button', () => {
+    test('version history button is NOT present in editor content card header for existing articles', async ({ page }) => {
+      // Since iteration 18, version history was moved to ArticleView
+      await page.goto(`${BASE_URL}/articles/art_1378b6293c09/edit`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
+      // The version history button (data-testid="version-history-btn") should NOT be visible
       const versionBtn = page.getByTestId('version-history-btn');
       await expect(versionBtn).not.toBeVisible();
     });
 
-    test('version history button is visible for existing articles', async ({ page }) => {
+    test('only Vollbild button is visible in editor content card header', async ({ page }) => {
       await page.goto(`${BASE_URL}/articles/art_1378b6293c09/edit`, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
-      const versionBtn = page.getByTestId('version-history-btn');
-      await expect(versionBtn).toBeVisible();
-      await expect(versionBtn).toContainText('Versionen');
-    });
-
-    test('clicking version history button opens dialog', async ({ page }) => {
-      await page.goto(`${BASE_URL}/articles/art_1378b6293c09/edit`, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(2000);
-
-      await page.getByTestId('version-history-btn').click();
-      await page.waitForTimeout(1500);
-
-      // Version dialog should be visible
-      const versionDialog = page.locator('.fixed:has-text("Versionshistorie")');
-      await expect(versionDialog).toBeVisible();
-    });
-
-    test('version history dialog shows Versionshistorie title', async ({ page }) => {
-      await page.goto(`${BASE_URL}/articles/art_1378b6293c09/edit`, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(2000);
-
-      await page.getByTestId('version-history-btn').click();
-      await page.waitForTimeout(1500);
-
-      // Check for Versionshistorie title in the dialog
-      const versionDialog = page.locator('.fixed:has-text("Versionshistorie")');
-      await expect(versionDialog).toContainText('Versionshistorie');
-    });
-
-    test('version history shows version entries with date and author', async ({ page }) => {
-      await page.goto(`${BASE_URL}/articles/art_1378b6293c09/edit`, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(2000);
-
-      await page.getByTestId('version-history-btn').click();
-      await page.waitForTimeout(1500);
-
-      const versionDialog = page.locator('.fixed:has-text("Versionshistorie")');
-      
-      // Should show Version 1
-      await expect(versionDialog.locator('text=Version 1')).toBeVisible();
-      // Should show author name
-      await expect(versionDialog).toContainText('Marc Hansen');
-    });
-
-    test('version entry shows Vorschau (preview) button', async ({ page }) => {
-      await page.goto(`${BASE_URL}/articles/art_1378b6293c09/edit`, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(2000);
-
-      await page.getByTestId('version-history-btn').click();
-      await page.waitForTimeout(1500);
-
-      const versionDialog = page.locator('.fixed:has-text("Versionshistorie")');
-      await expect(versionDialog.locator('button:has-text("Vorschau")')).toBeVisible();
-    });
-
-    test('version entry shows Wiederherstellen (restore) button', async ({ page }) => {
-      await page.goto(`${BASE_URL}/articles/art_1378b6293c09/edit`, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(2000);
-
-      await page.getByTestId('version-history-btn').click();
-      await page.waitForTimeout(1500);
-
-      const versionDialog = page.locator('.fixed:has-text("Versionshistorie")');
-      await expect(versionDialog.locator('button:has-text("Wiederherstellen")')).toBeVisible();
-    });
-
-    test('version history dialog can be closed with X button', async ({ page }) => {
-      await page.goto(`${BASE_URL}/articles/art_1378b6293c09/edit`, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(2000);
-
-      await page.getByTestId('version-history-btn').click();
-      await page.waitForTimeout(1500);
-
-      const versionDialog = page.locator('.fixed:has-text("Versionshistorie")');
-      await expect(versionDialog).toBeVisible();
-
-      // Click close button (X)
-      await versionDialog.locator('button').first().click();
-      await page.waitForTimeout(500);
-
-      await expect(versionDialog).not.toBeVisible();
+      // The Vollbild button should be visible in the content card header
+      const fullscreenBtn = page.getByTestId('fullscreen-editor-btn');
+      await expect(fullscreenBtn).toBeVisible();
+      await expect(fullscreenBtn).toContainText('Vollbild');
     });
   });
 
