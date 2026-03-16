@@ -100,6 +100,19 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **Session-Redirect** - Bei aktiver Session automatische Weiterleitung zum Dashboard
 - ✅ **Root-URL Handling** - `/` leitet eingeloggte User zum Dashboard weiter
 
+### Kommentarsystem (Iteration 19) - 16.03.2026
+- ✅ **Kommentare für Artikel** - Benutzer können Kommentare zu veröffentlichten Artikeln schreiben
+- ✅ **Kommentare aktivieren/deaktivieren** - Toggle im Editor pro Artikel
+- ✅ **Kommentar-Anzeige** - In der Artikelansicht werden Kommentare angezeigt
+- ✅ **Kommentar-Löschung** - Nur Admins können Kommentare löschen
+
+### Backend Refactoring (Iteration 20) - 16.03.2026
+- ✅ **Modulare Architektur** - server.py von 2.293 Zeilen auf 142 Zeilen reduziert
+- ✅ **Separate Route-Dateien** - 12 spezialisierte Router-Module in `/routes/`
+- ✅ **Zentrale Modelle** - Alle Pydantic-Modelle in `models.py`
+- ✅ **Database-Modul** - MongoDB-Verbindung in `database.py`
+- ✅ **Dependencies** - Auth-Funktionen in `dependencies.py`
+
 ## API Endpoints
 
 ### Groups (Admin only)
@@ -149,9 +162,32 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - [ ] Schnellsuche (Strg+K)
 - [ ] Benutzer-Suche in @-Mentions
 - [ ] Artikel-Versionierung
-- [ ] Backend Refactoring (server.py aufteilen in kleinere Router-Dateien)
 
 ### P3 (Nice to Have)
 - [ ] OCR für gescannte PDFs
 - [ ] Analytics Dashboard
 - [ ] E-Mail-Benachrichtigungen
+- [ ] Hochwertige PDF-zu-HTML-Konvertierung
+
+## Backend Architektur (nach Refactoring)
+
+```
+/app/backend/
+├── server.py          # 142 Zeilen - Hauptanwendung, Router-Einbindung
+├── database.py        # 20 Zeilen - MongoDB-Verbindung
+├── dependencies.py    # 77 Zeilen - Auth-Funktionen
+├── models.py          # 209 Zeilen - Pydantic-Modelle
+└── routes/
+    ├── auth.py        # 91 Zeilen - Login, Logout
+    ├── users.py       # 160 Zeilen - Benutzer-CRUD
+    ├── groups.py      # 119 Zeilen - Gruppen-CRUD
+    ├── categories.py  # 65 Zeilen - Kategorien-CRUD
+    ├── articles.py    # 286 Zeilen - Artikel, Kommentare, Tags
+    ├── search.py      # 129 Zeilen - Suche
+    ├── documents.py   # 205 Zeilen - Dokument-Upload
+    ├── recycle_bin.py # 157 Zeilen - Papierkorb
+    ├── images.py      # 79 Zeilen - Bilder-Upload
+    ├── stats.py       # 118 Zeilen - Statistiken, Widget
+    ├── backup.py      # 322 Zeilen - Backup/Export/Import
+    └── exports.py     # 351 Zeilen - PDF/DOCX-Export, Favoriten
+```
