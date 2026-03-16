@@ -1,173 +1,179 @@
 <analysis>**original_problem_statement:**
-The initial goal was to build a knowledge management platform named CANUSA Nexus.
+The user's goal is to build a comprehensive knowledge management platform named CANUSA Nexus.
 
-Recent user requests implemented include:
-- A hierarchical tree structure for categories.
-- Article-to-article linking using an @ mention system.
-- Advanced table editing features in the WYSIWYG editor.
-- Image resizing within the editor.
-- A Recycle Bin for soft-deleting articles.
-- A button to revert a published article to draft status.
-- Fail2Ban-compatible logging for failed login attempts.
-- Automatic redirection from the login page to the dashboard.
-- A full comment system for articles.
-- Search functionality enhancements: filtering by tags, author, status, important flag, and date range. Removal of HTML from search snippets.
-- An analytics function for articles showing views, favorites, comments, and an engagement score.
-- A hierarchical folder structure for documents, similar to the article categories.
-- The ability for Admins and Editors to move and delete documents.
+Recently implemented user requests:
+- A responsive design fix for document action buttons.
+- High-fidelity PDF import to convert PDF content into editable HTML.
+- A full-featured, in-app viewer for PDF files.
+- An editor that can be opened in a full-screen pop-up window.
+- User mentions () in the article editor with an autocompletion list.
+- A version history for articles, which is automatically created on save and displayed as a timeline on the article view page.
+- Expanded the document management system to support uploading, viewing, and importing various file types including DOC/DOCX, TXT, CSV, and XLS/XLSX.
+- An Import feature in the article editor to insert content directly from uploaded documents.
+- The current task is to integrate Google OAuth for user authentication.
 
 **User's preferred language**: Deutsch
 
 **what currently exists?**
-The application is a full-stack knowledge management platform using React and FastAPI. The backend was recently refactored from a monolithic  into a scalable, modular structure with multiple route files.
+The application is a full-stack knowledge management platform using React for the frontend and FastAPI for the backend, with MongoDB as the database.
 
-- **Authentication**: Custom JWT-based system.
-- **Content Management**: Features a TipTap-based editor for articles with rich text, tables, images, and inter-article links. Articles have categories, tags, status, comments, and analytics (views, engagement score).
-- **Search**: A powerful search page allows full-text search and advanced filtering by tags (searchable dropdown), author, status, creation date, and an important flag.
-- **Document Management**: Supports PDF uploads, which are now organized into a hierarchical folder structure. Users can create folders, upload documents into them, move documents between folders, and delete them.
-- **Recycle Bin**: Soft-deletes for articles.
+- **Authentication**: A custom JWT-based system is in place. Work has begun on integrating Google OAuth.
+- **Content Management**: Features a Tiptap-based rich text editor for articles. It supports inter-article linking (), user mentions (), tables, and image resizing.
+- **Article Features**: Articles have categories, tags, status, comments, analytics, and a version history.
+- **Document Management**: Supports uploading multiple file types (PDF, DOCX, CSV, TXT, etc.). It includes a hierarchical folder structure and an in-app multi-format viewer that can display PDFs, render office documents as HTML, and show spreadsheets as tables.
+- **Article Editor**: The editor has a full-screen mode and an Import feature to pull content directly from the document management system into an article.
+- **Search**: Advanced search with filters for tags, author, status, and date.
 - **User/Group Management**: Admins can manage users and groups.
 
 **Last working item**:
-- **Last item agent was working**: Implementing UI/UX enhancements for document management. Specifically, adding an Aktionen (Actions) dropdown menu to each document entry, containing options to Verschieben (Move) and Löschen (Delete). The backend permission for deleting was also extended from just Admins to include Editors.
+- **Last item agent was working**: Starting the integration of Google OAuth for user authentication. The agent successfully installed the required Python libraries (, ), added the client ID and secret to the backend  file, and created the initial structure for the Google OAuth routes in a new file ().
 - **Status**: IN PROGRESS
-- **Agent Testing Done**: N (The agent implemented the code changes and restarted the backend, but the session ended before any visual or API testing could be performed on the new Aktionen dropdown.)
-- **Which testing method agent to use?**: both (The agent should first perform a visual test using the screenshot tool to confirm the Aktionen dropdown appears and functions correctly for both admin and editor roles. Then, the testing agent can be used to create formal tests for the document management feature, including folder creation, moving, and deletion.)
+- **Agent Testing Done**: N
+- **Which testing method agent to use?**: both. The backend OAuth flow (redirect, callback, token issuance) needs to be completed and tested. The frontend needs a Login with Google button and logic to handle the post-login redirect. Given the multi-step nature of OAuth, manual testing in a browser is essential first, followed by the  to create regression tests.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: (P0) Verify Document Move/Delete Functionality:** The last implementation for adding an Aktionen dropdown to move and delete documents was not tested. The next agent must verify this functionality works as expected for both Admin and Editor roles.
+- **Issue 1: (P0) Complete Google OAuth Integration.** This is the current active task and is a blocker for any other authentication-related work.
 
   - **Issues Detail:**
-    - **Issue 1: Verify Document Move/Delete Functionality**
-      - **Attempted fixes:** The code was written and the backend was restarted. No verification was done.
+    - **Issue 1: Complete Google OAuth Integration**
+      - **Attempted fixes:** The initial setup (library installation, .env configuration, route file creation) is done.
       - **Next debug checklist:**
-        1. Log in as an admin ().
-        2. Navigate to the  page.
-        3. Verify that each document in the list has a new Aktionen (Actions) button with a dropdown menu.
-        4. Check that the menu contains Verschieben (Move) and Löschen (Delete).
-        5. Test the delete functionality.
-        6. Test the move functionality by moving a document to a different folder.
-        7. Repeat steps 1-6 logged in as an Editor user to ensure permissions are correct.
-      - **Why fix this issue and what will be achieved with the fix?** This will complete the user's request for document management enhancements.
+        1. **Backend**:
+           - Complete the  endpoint in  to redirect users to Google's consent screen.
+           - Implement the  endpoint to handle the response from Google, create or find the user in the database, and issue a JWT token.
+           - Register the new  router in .
+        2. **Frontend**:
+           - Add a Login with Google button to the login page ().
+           - Implement the client-side logic to initiate the login flow by linking to the backend login endpoint.
+           - Add logic to the frontend to handle the user being redirected back from the callback, storing the JWT, and redirecting to the dashboard.
+        3. **Verification**: Remind the user to add the correct redirect URIs to their Google Cloud Console as previously instructed:
+           - Authorized redirect URI: 
+      - **Why fix this issue and what will be achieved with the fix?** It will provide users with an alternative, secure, and convenient way to log in to the application.
       - **Status**: IN PROGRESS
       - **Is recurring issue?** N
       - **Should Test frontend/backend/both after fix?** Both.
       - **Blocked on other issue:** None.
 
 **In progress Task List**:
-- None.
+- **Task 1: Google OAuth Integration**
+  - **Where to resume**: Resume work in  to implement the login and callback logic.
+  - **What will be achieved with this?** A fully functional Login with Google feature.
+  - **Status**: IN PROGRESS
+  - **Should Test frontend/backend/both after fix?** Both.
+  - **Blocked on something**: User needs to configure the redirect URIs in their Google Cloud Console.
 
 **Upcoming and Future Tasks**
 - **Future Tasks**:
-    - **P1: High-Fidelity PDF Import**: The original request to convert PDF content (including layouts and tables) into editable HTML within the editor is still unfulfilled. The current solution is PDF embedding. Exploring a more advanced library like  could be a future enhancement.
+    - **P3: OCR for Scanned PDFs**: The user expressed interest in adding Optical Character Recognition (OCR) capabilities to extract text from image-based or scanned PDFs that are uploaded to the system.
 
 **Completed work in this session**
+- **Multi-Format Document Management (Major Feature)**:
+  - Extended document uploads to support DOC/DOCX, TXT, CSV, XLS/XLSX in addition to PDF.
+  - Implemented a multi-format  component that renders different file types appropriately (e.g., CSV as an HTML table).
+  - Added an Import button and dialog () to the  to allow users to pull content from uploaded documents directly into an article.
+- **Article Versioning & History**:
+  - Implemented a system to automatically save a new version of an article upon every update ().
+  - Refactored the UI to display the version history as a timeline at the bottom of the  page, removing it from the editor interface.
+- **Editor Enhancements**:
+  - Implemented a full-screen (Popup) mode for the article editor.
+  - Added user mentions with a  trigger, fetching users from  and displaying them in a  component.
+- **Enhanced PDF Viewer**:
+  - Integrated  to create a full-featured PDF viewer with controls for zoom, rotation, page navigation, and download, replacing the simple text extraction view.
 - **Bug Fixes**:
-  - **Blockquote Styling**: Fixed a persistent bug where blockquotes created in the editor were not styled correctly in the article view. This involved adding more specific CSS rules in .
-  - **Comment Toggle**: Fixed a bug where disabling comments for an article was not being saved. The  field was missing from the  model in the backend.
-- **Backend Refactoring (Major Task)**:
-  - The monolithic  was completely refactored into a modular and scalable structure. Logic was split into multiple files under  (e.g., , , ), along with dedicated , , and .
-- **Feature Implementation**:
-  - **Article Analytics**: Implemented a new feature to track and display statistics for each article, including view count, favorites, comments, and a calculated engagement score. Added a  endpoint and a statistics modal in .
-  - **Advanced Search Filters**: Overhauled the search page () to include:
-    - A searchable dropdown for filtering by tags.
-    - Filters for author, article status (draft or published), and important flag.
-    - Date range pickers to filter by creation date.
-    - Fixed an issue where HTML tags were appearing in search result snippets.
-  - **Document Folder Structure**: Implemented a hierarchical folder system for the documents section, mirroring the functionality of article categories. This involved:
-    - New backend models and API routes for .
-    - A complete redesign of the  page to show a folder tree on the left and documents on the right.
-  - **Document Actions**: Added backend and frontend logic for moving and deleting documents within the new folder structure.
+  - **Responsive UI**: Fixed an issue where document action buttons were not visible on smaller screen sizes.
+  - **Document Import Flow**: Addressed multiple bugs reported by the user regarding the new multi-format document feature, including fixing upload validation, ensuring direct import after upload, correcting viewer UI labels, and fixing character rendering for DOCX files.
 
 **Earlier issues found/mentioned but not fixed**
-- See **Upcoming and Future Tasks**.
+- None.
 
 **Known issue recurrence from previous fork**
 - None.
 
 **Code Architecture**
-The backend architecture was significantly refactored into a modular structure.
 
 
 **Key Technical Concepts**
-- **Backend**: FastAPI with  for modular routing. Pydantic for data models. Motor for async MongoDB access.
-- **Frontend**: React, TipTap editor, Shadcn UI components (, , , ).
-- **Data Model**: New  collection.  collection updated with .  collection updated with  and .
+- **Backend**: FastAPI, Motor, Pydantic.
+- **Frontend**: React, TipTap, Shadcn UI.
+- **New Libraries/Integrations**:
+  - **Google OAuth**: , .
+  - **Document Processing**: , , , , .
+  - **PDF Viewing**: .
 
 **key DB schema**
-- **articles**: 
-- **documents**: 
-- **document_folders**: 
+- **article_versions**: 
+- **users**: Now used for Google OAuth sign-in and user mentions.
+- **documents**: Updated to handle various  and .
 
 **changes in tech stack**
-- The backend code was completely restructured from one file into a modular project using FastAPI's .
+- No fundamental changes, but several new libraries were added to support multi-format document handling and Google OAuth.
 
 **All files of reference**
-- **New Backend Structure**:
-  -  (new slim version)
-  - 
-  - 
-  - 
-  - All files under 
-- **Modified/New Frontend Files**:
-  - : Completely rewritten to support folder structure.
-  - : Completely rewritten for advanced filtering.
-  - : Modified to add the Analytics button and dialog.
-  - : New component for the analytics modal.
-  - : Modified to fix blockquote styling.
-
-**Areas that need refactoring**:
-- The major refactoring of  has been successfully completed, resolving the most critical piece of technical debt.
+-  (New, in progress)
+-  (Heavily modified for multi-format processing)
+-  (New)
+-  (Modified for versioning)
+-  (Heavily modified for import, fullscreen, mentions)
+-  (Modified to show version history)
+-  (Modified for multi-format viewer and upload)
+-  (New)
+-  (New)
 
 **key api endpoints**
-- **Article Analytics**: 
-- **Advanced Search**:  (Now accepts , , , , , )
-- **Document Folders**:
+- **Google Auth (In Progress)**:
+  - 
+  - 
+- **Document Conversion & Content**:
   - 
   - 
   - 
+- **Article Versioning**:
   - 
-- **Document Actions**:
   - 
-  -  (Permissions updated)
+- **User Mentions**:
+  - 
 
 **Critical Info for New Agent**
 - **You MUST respond in German.**
-- The previous agent completed a massive and successful refactoring of the entire backend. The application is now much more maintainable.
-- The last implemented feature (move/delete buttons for documents) has **not been tested**. Your first action should be to verify this functionality.
-- The agent frequently encountered session timeouts during testing. This seems to be an environment issue. Be prepared to log in repeatedly or find a way to create a longer-lasting session token for testing.
+- Your immediate priority is to complete the Google OAuth integration. The backend groundwork has been laid, but the core logic in the routes and all frontend work is pending.
+- The user has provided Google Client ID and Secret, which are in . You will need to ensure the user has configured the necessary redirect URIs in their Google Cloud Console for the integration to work.
+- The application has undergone significant feature additions in this session, all of which passed tests via . The codebase is stable.
 
 **documents and test reports created in this job**
--  (updated multiple times)
+-  (Updated multiple times)
+-  (Last successful test run after bug fixes)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **[Msg 422]**: Request to add move/delete functionality for documents for admins and editors. **Status: IN PROGRESS**.
-2.  **[Msg 381]**: Request to create a folder structure for documents, similar to categories. **Status: DONE**.
-3.  **[Msg 344]**: Feedback on search: HTML tags are visible, requests a searchable dropdown for tags and more filters (date, author, etc.). **Status: DONE**.
-4.  **[Msg 269]**: Request for two features: search by tags and article analytics. **Status: DONE**.
-5.  **[Msg 168, 161]**: Approval to start the P1 refactoring of . **Status: DONE**.
-6.  **[Msg 122]**: Confirmed blockquote fix works. Reported a new bug: comment function cannot be disabled. **Status: DONE**.
-7.  **[Msg 98]**: Detailed report of how the blockquote feature is misbehaving. **Status: Resolved in subsequent messages**.
-8.  **[Msg 54]**: User reports that the blockquote fix is not working and provides a screenshot. **Status: Resolved in subsequent messages**.
-9.  **[Msg 5]**: User reports a bug: Blockquotes (Zitat) are not displayed correctly in the final article. **Status: DONE**.
+1. **User**: Requests Google OAuth integration and provides the Client ID and Secret. **Status: IN PROGRESS**.
+2. **User**: Reports three bugs with screenshots: upload validation is stuck on PDF, import doesn't happen directly, and DOCX preview is distorted with wrong labels. **Status: RESOLVED**.
+3. **User**: Requests a major feature: support for uploading DOC/DOCX, TXT, CSV, XLS/XLSX, with corresponding viewers and an import function in the editor. **Status: DONE**.
+4. **User**: Requests a UI change for versioning: display the history as a list below the article content, not inside the editor. **Status: DONE**.
+5. **User**: Requests three features: editor pop-up window, @-mentions for users, and article versioning. **Status: DONE**.
+6. **User**: Requests to enhance the document preview to be a full-featured PDF viewer, not just extracted text. **Status: DONE**.
+7. **User**: Acknowledges the fix for the responsive bug and requests to proceed with the P1 task (High-fidelity PDF import). **Status: DONE**.
+8. **User**: Reports a responsive bug where document action buttons are not visible on narrow screens. **Status: RESOLVED**.
+9. **Agent**: Proposes plan to fix the responsive bug and then implement the high-fidelity PDF import. **Status: Superseded**.
+10. **User**: Confirms the initial document action feature (move/delete) is not visible on narrow screens. **Status: Part of the resolved responsive bug**.
 
 **Project Health Check:**
-- **Broken**: None. All reported bugs were fixed. The last implemented feature is pending verification.
+- **Broken**: None. Google OAuth is in progress but not broken.
 - **Mocked**: None.
 
 **3rd Party Integrations**
-- None.
+- **Google OAuth**: In progress. Requires  and . User has provided credentials.
 
 **Testing status**
-- **Testing agent used after significant changes**: NO. The agent performed manual testing via  and screenshots for all new features and bug fixes in this session.
-- **Troubleshoot agent used after agent stuck in loop**: NO
-- **Test files created**: None.
-- **Known regressions**: None reported.
+- **Testing agent used after significant changes**: YES. The agent was used successfully after every major feature implementation and bug-fix round.
+- **Troubleshoot agent used after agent stuck in loop**: NO.
+- **Test files created**: The testing agent has been creating and maintaining test files, but no new manual test files were created.
+- **Known regressions**: None.
 
 **Credentials to test flow:**
 - **Admin Email**: 
 - **Admin Password**: 
+- **Google Client ID**:  (in )
+- **Google Client Secret**:  (in )
 
 **What agent forgot to execute**
-- The agent did not get to test the very last change made: adding the Aktionen (Actions) dropdown for moving and deleting documents in the  page. Verification of this feature is the immediate next step.</analysis>
+- The agent did not forget to execute any tasks. The session ended while the agent was in the middle of implementing the Google OAuth feature, which is the immediate next step.</analysis>
