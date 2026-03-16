@@ -569,19 +569,41 @@ input:focus, textarea:focus, select:focus {
 
 /* Explicit blockquote styling for article view */
 .prose blockquote,
-.prose-slate blockquote {
+.prose-slate blockquote,
+[data-testid="article-content"] blockquote {
     border-left: 4px solid hsl(0 84% 50%) !important;
-    padding-left: 1rem !important;
-    margin: 1rem 0 !important;
+    padding: 0.75rem 1rem !important;
+    margin: 1.25rem 0 !important;
     font-style: italic !important;
     color: #64748b !important;
     background-color: hsl(210 30% 97%) !important;
-    padding: 0.75rem 1rem !important;
     border-radius: 0 0.375rem 0.375rem 0;
+    display: block !important;
+}
+
+.prose blockquote p,
+.prose-slate blockquote p,
+[data-testid="article-content"] blockquote p {
+    margin: 0 !important;
 }
 
 .dark .prose blockquote,
-.dark .prose-slate blockquote {
+.dark .prose-slate blockquote,
+.dark [data-testid="article-content"] blockquote {
     color: hsl(215 20% 70%) !important;
     background-color: hsl(222 47% 14%) !important;
+}
+
+/* Ensure paragraphs have proper spacing in article view */
+[data-testid="article-content"] p {
+    margin-top: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
+[data-testid="article-content"] p:first-child {
+    margin-top: 0 !important;
+}
+
+[data-testid="article-content"] p:last-child {
+    margin-bottom: 0 !important;
 }
