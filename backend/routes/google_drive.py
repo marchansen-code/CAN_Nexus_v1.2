@@ -322,15 +322,60 @@ async def list_drive_files(
 
 
 @router.get("/folders")
-async def list_drive_folders(user: User = Depends(get_current_user)):
-    """List all folders from Google Drive for export folder selection including shared drives."""
+async def list_drive_folders(
+    include_shared: bool = Query(default=False, description="Include shared drives"),
+    user: User = Depends(get_current_user)
+):
+    """List folders from Google Drive for export folder selection."""
     try:
         service = await get_drive_service(user)
         
-        query = "mimeType='application/vnd.google-apps.folder' and trashed=false"
+        # Query only user's own folders (not shared with them)
+        query = "mimeType='application/vnd.google-apps.folder' and trashed=false and 'me' in owners"
         
         results = service.files().list(
             q=query,
+            pageSize=200,
+            fields="files(id, name, parents)",
+            orderBy="name"
+        ).execute()
+        
+        folders = results.get('files', [])
+        
+        # Build folder tree for user's own folders
+        folder_list = [{"id": "root", "name": "Meine Ablage", "parent": None}]
+        for f in folders:
+            folder_list.append({
+                "id": f["id"],
+                "name": f["name"],
+                "parent": f.get("parents", [None])[0]
+            })
+        
+        return {"folders": folder_list}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to list Drive folders: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Fehler beim Laden der Ordner: {str(e)}")
+
+
+@router.get("/shared-drive-folders/{drive_id}")
+async def list_shared_drive_folders(
+    drive_id: str,
+    user: User = Depends(get_current_user)
+):
+    """List folders within a specific shared drive."""
+    try:
+        service = await get_drive_service(user)
+        
+        # Get folders in the shared drive
+        query = f"mimeType='application/vnd.google-apps.folder' and trashed=false"
+        
+        results = service.files().list(
+            q=query,
+            corpora="drive",
+            driveId=drive_id,
             pageSize=200,
             fields="files(id, name, parents)",
             orderBy="name",
@@ -340,34 +385,20 @@ async def list_drive_folders(user: User = Depends(get_current_user)):
         
         folders = results.get('files', [])
         
-        # Build folder tree
-        folder_list = [{"id": "root", "name": "Mein Drive", "parent": None}]
+        folder_list = [{"id": drive_id, "name": "Stammverzeichnis", "parent": None}]
         for f in folders:
             folder_list.append({
                 "id": f["id"],
                 "name": f["name"],
-                "parent": f.get("parents", [None])[0]
+                "parent": f.get("parents", [drive_id])[0]
             })
-        
-        # Also get shared drives
-        try:
-            shared_drives = service.drives().list(pageSize=50).execute()
-            for drive in shared_drives.get('drives', []):
-                folder_list.append({
-                    "id": drive["id"],
-                    "name": f"📁 {drive['name']} (Geteilte Ablage)",
-                    "parent": None,
-                    "isSharedDrive": True
-                })
-        except Exception as e:
-            logger.warning(f"Could not list shared drives: {e}")
         
         return {"folders": folder_list}
     
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to list Drive folders: {str(e)}")
+        logger.error(f"Failed to list shared drive folders: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Fehler beim Laden der Ordner: {str(e)}")
 
 
