@@ -25,7 +25,8 @@ import {
   FileEdit,
   MessageSquare,
   Maximize2,
-  FileUp
+  FileUp,
+  Mail
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import RichTextEditor from "@/components/RichTextEditor";
 import FullscreenEditor from "@/components/FullscreenEditor";
 import DocumentImportDialog from "@/components/DocumentImportDialog";
+import ReviewRequestDialog from "@/components/dialogs/ReviewRequestDialog";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -177,6 +179,7 @@ const ArticleEditor = () => {
   const [pdfImported, setPdfImported] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
 
   // Check for PDF import data on mount
   useEffect(() => {
@@ -397,6 +400,19 @@ const ArticleEditor = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Review Request Button - nur für bestehende Entwürfe */}
+          {!isNew && article.status === "draft" && (
+            <Button 
+              variant="outline" 
+              onClick={() => setShowReviewDialog(true)} 
+              disabled={saving}
+              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+              data-testid="review-request-btn"
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Review anfordern
+            </Button>
+          )}
           {/* Zurück zu Entwurf Button - nur für veröffentlichte Artikel */}
           {!isNew && article.status === "published" && (
             <Button 
@@ -781,6 +797,16 @@ const ArticleEditor = () => {
         onClose={() => setShowImportDialog(false)}
         onImport={handleDocumentImport}
       />
+
+      {/* Review Request Dialog */}
+      {!isNew && (
+        <ReviewRequestDialog
+          open={showReviewDialog}
+          onClose={() => setShowReviewDialog(false)}
+          articleId={articleId}
+          articleTitle={article.title}
+        />
+      )}
     </div>
   );
 };

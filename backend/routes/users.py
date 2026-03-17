@@ -1,7 +1,7 @@
 """
 User management routes for the CANUSA Knowledge Hub API.
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from typing import Dict, List
 from datetime import datetime, timezone
 import uuid
@@ -9,6 +9,7 @@ import uuid
 from database import db
 from models import User, UserCreate, RoleUpdate, PasswordChange
 from dependencies import get_current_user, get_password_hash
+from services.email_service import email_service
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -65,7 +66,12 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
 
 
 @router.put("/{user_id}/role")
-async def update_user_role(user_id: str, role_update: RoleUpdate, current_user: User = Depends(get_current_user)):
+async def update_user_role(
+    user_id: str, 
+    role_update: RoleUpdate, 
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+):
     """Update a user's role (admin only)."""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Nur Administratoren können Rollen ändern")
@@ -76,6 +82,13 @@ async def update_user_role(user_id: str, role_update: RoleUpdate, current_user: 
     if user_id == current_user.user_id:
         raise HTTPException(status_code=400, detail="Sie können Ihre eigene Rolle nicht ändern")
     
+    # Get current user data before update
+    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    
+    old_role = user_doc.get("role", "viewer")
+    
     result = await db.users.update_one(
         {"user_id": user_id},
         {"$set": {"role": role_update.role, "updated_at": datetime.now(timezone.utc).isoformat()}}
@@ -83,6 +96,20 @@ async def update_user_role(user_id: str, role_update: RoleUpdate, current_user: 
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    
+    # Send notification if role changed
+    if old_role != role_update.role:
+        prefs = user_doc.get("notification_preferences", {})
+        if prefs.get("status_changes", True):
+            background_tasks.add_task(
+                email_service.send_status_change_notification,
+                user_doc["email"],
+                user_doc.get("name", "Unbekannt"),
+                old_role,
+                role_update.role,
+                None,
+                current_user.name
+            )
     
     return {"message": f"Rolle auf {role_update.role} geändert"}
 
@@ -113,7 +140,11 @@ async def change_user_password(user_id: str, password_data: PasswordChange, curr
 
 
 @router.put("/{user_id}/block")
-async def toggle_user_block(user_id: str, current_user: User = Depends(get_current_user)):
+async def toggle_user_block(
+    user_id: str, 
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+):
     """Block or unblock a user (admin only)."""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Nur Administratoren können Benutzer sperren")
@@ -134,6 +165,19 @@ async def toggle_user_block(user_id: str, current_user: User = Depends(get_curre
     
     if new_status:
         await db.user_sessions.delete_many({"user_id": user_id})
+    
+    # Send notification about status change
+    prefs = user_doc.get("notification_preferences", {})
+    if prefs.get("status_changes", True):
+        background_tasks.add_task(
+            email_service.send_status_change_notification,
+            user_doc["email"],
+            user_doc.get("name", "Unbekannt"),
+            user_doc.get("role", "viewer"),
+            user_doc.get("role", "viewer"),
+            new_status,
+            current_user.name
+        )
     
     return {
         "message": f"Benutzer {'gesperrt' if new_status else 'entsperrt'}",

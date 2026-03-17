@@ -7,12 +7,14 @@ import {
   Copy,
   Check,
   ExternalLink,
-  Globe
+  Globe,
+  Bell
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import NotificationSettings from "@/components/NotificationSettings";
 
 const Settings = () => {
   const { user } = useContext(AuthContext);
@@ -81,6 +83,10 @@ const Settings = () => {
             <User className="w-4 h-4" />
             Profil
           </TabsTrigger>
+          <TabsTrigger value="notifications" className="gap-2">
+            <Bell className="w-4 h-4" />
+            Benachrichtigungen
+          </TabsTrigger>
           <TabsTrigger value="api" className="gap-2">
             <Code className="w-4 h-4" />
             API & Widget
@@ -119,6 +125,11 @@ const Settings = () => {
               </p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Notifications Tab */}
+        <TabsContent value="notifications" className="space-y-6">
+          <NotificationSettings />
         </TabsContent>
 
         {/* API Tab */}

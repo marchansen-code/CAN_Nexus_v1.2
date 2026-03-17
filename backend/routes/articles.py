@@ -1,7 +1,7 @@
 """
 Article management routes for the CANUSA Knowledge Hub API.
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from typing import Dict, List, Optional
 from datetime import datetime, timezone
 import re
@@ -14,12 +14,18 @@ router = APIRouter(prefix="/articles", tags=["Articles"])
 
 
 def can_user_see_article(article: dict, user: User, user_groups: List[str]) -> bool:
-    """Check if user can see the article based on status, groups, etc."""
+    """Check if user can see the article based on status, groups, reviewers, etc."""
     if user.role == "admin":
         return True
     
     if article.get("status") == "draft":
-        return article.get("created_by") == user.user_id
+        # Author can always see their own drafts
+        if article.get("created_by") == user.user_id:
+            return True
+        # Reviewers can see drafts they were invited to review
+        if user.user_id in article.get("reviewers", []):
+            return True
+        return False
     
     visible_groups = article.get("visible_to_groups", [])
     if visible_groups:
@@ -54,7 +60,8 @@ async def get_articles(
             continue
         
         if art.get("status") == "draft":
-            if art.get("created_by") == user.user_id:
+            # Author or reviewer can see draft
+            if art.get("created_by") == user.user_id or user.user_id in art.get("reviewers", []):
                 filtered.append(art)
             continue
         
@@ -129,8 +136,10 @@ async def get_article(article_id: str, user: User = Depends(get_current_user)):
     user_groups = user_doc.get("group_ids", []) if user_doc else []
     
     if user.role != "admin":
-        if article.get("status") == "draft" and article.get("created_by") != user.user_id:
-            raise HTTPException(status_code=403, detail="Zugriff verweigert")
+        if article.get("status") == "draft":
+            # Allow author or reviewer to see draft
+            if article.get("created_by") != user.user_id and user.user_id not in article.get("reviewers", []):
+                raise HTTPException(status_code=403, detail="Zugriff verweigert")
         visible_groups = article.get("visible_to_groups", [])
         if visible_groups and not any(g in user_groups for g in visible_groups):
             raise HTTPException(status_code=403, detail="Zugriff verweigert")
@@ -171,8 +180,16 @@ async def create_article(article: ArticleCreate, user: User = Depends(get_curren
 
 
 @router.put("/{article_id}", response_model=Dict)
-async def update_article(article_id: str, update: ArticleUpdate, user: User = Depends(get_current_user)):
+async def update_article(
+    article_id: str, 
+    update: ArticleUpdate, 
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user)
+):
     """Update an article and create a version snapshot."""
+    from routes.notifications import notify_mentions_in_content, notify_favorite_update
+    from services.email_service import email_service
+    
     # Get current article before update
     current_article = await db.articles.find_one({"article_id": article_id}, {"_id": 0})
     if not current_article:
@@ -198,6 +215,48 @@ async def update_article(article_id: str, update: ArticleUpdate, user: User = De
         raise HTTPException(status_code=404, detail="Artikel nicht gefunden")
     
     article = await db.articles.find_one({"article_id": article_id}, {"_id": 0})
+    
+    # Check for new mentions and send notifications
+    if update.content and update.content != current_article.get("content"):
+        background_tasks.add_task(
+            notify_mentions_in_content,
+            article_id,
+            update.content,
+            user.user_id,
+            article["title"]
+        )
+        # Notify users who favorited this article
+        background_tasks.add_task(
+            notify_favorite_update,
+            article_id,
+            "content",
+            user.user_id
+        )
+    
+    # Check for contact person change
+    if update.contact_person_id and update.contact_person_id != current_article.get("contact_person_id"):
+        # Only notify if new contact person is not the author
+        if update.contact_person_id != current_article.get("created_by"):
+            new_contact = await db.users.find_one(
+                {"user_id": update.contact_person_id},
+                {"_id": 0, "email": 1, "name": 1, "notification_preferences": 1}
+            )
+            if new_contact:
+                prefs = new_contact.get("notification_preferences", {})
+                if prefs.get("status_changes", True):
+                    # Get assigner name
+                    assigner = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "name": 1})
+                    assigner_name = assigner.get("name", "Unbekannt") if assigner else "Unbekannt"
+                    
+                    background_tasks.add_task(
+                        email_service.send_contact_person_notification,
+                        new_contact["email"],
+                        new_contact.get("name", "Unbekannt"),
+                        article["title"],
+                        article_id,
+                        assigner_name
+                    )
+    
     return article
 
 
@@ -273,9 +332,16 @@ async def get_article_comments(article_id: str, user: User = Depends(get_current
 
 
 @router.post("/{article_id}/comments")
-async def create_comment(article_id: str, comment_data: CommentCreate, user: User = Depends(get_current_user)):
+async def create_comment(
+    article_id: str, 
+    comment_data: CommentCreate, 
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user)
+):
     """Create a comment on an article."""
-    article = await db.articles.find_one({"article_id": article_id}, {"_id": 0, "comments_enabled": 1, "status": 1})
+    from routes.notifications import notify_favorite_update
+    
+    article = await db.articles.find_one({"article_id": article_id}, {"_id": 0, "comments_enabled": 1, "status": 1, "title": 1, "favorited_by": 1})
     if not article:
         raise HTTPException(status_code=404, detail="Artikel nicht gefunden")
     
@@ -296,6 +362,15 @@ async def create_comment(article_id: str, comment_data: CommentCreate, user: Use
     )
     
     await db.comments.insert_one(comment.model_dump())
+    
+    # Notify users who favorited this article about new comment
+    if article.get("favorited_by"):
+        background_tasks.add_task(
+            notify_favorite_update,
+            article_id,
+            "comment",
+            user.user_id
+        )
     
     return {"message": "Kommentar erstellt", "comment": comment.model_dump()}
 
