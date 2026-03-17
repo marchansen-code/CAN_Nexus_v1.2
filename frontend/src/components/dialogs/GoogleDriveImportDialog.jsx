@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Folder, FileText, ArrowLeft, Check, File, Table2, HardDrive, Users } from "lucide-react";
 
 const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId }) => {
@@ -238,19 +237,35 @@ const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId 
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="my-drive" className="gap-2 focus:ring-0 focus:outline-none focus-visible:ring-0">
-              <HardDrive className="w-4 h-4" />
-              Meine Ablage
-            </TabsTrigger>
-            <TabsTrigger value="shared-drives" className="gap-2 focus:ring-0 focus:outline-none focus-visible:ring-0">
-              <Users className="w-4 h-4" />
-              Geteilte Ablagen
-            </TabsTrigger>
-          </TabsList>
+        {/* Tab Buttons */}
+        <div className="grid w-full grid-cols-2 gap-1 p-1 bg-muted rounded-lg">
+          <button
+            onClick={() => handleTabChange("my-drive")}
+            className={`flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+              activeTab === "my-drive"
+                ? "bg-background shadow text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <HardDrive className="w-4 h-4" />
+            Meine Ablage
+          </button>
+          <button
+            onClick={() => handleTabChange("shared-drives")}
+            className={`flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+              activeTab === "shared-drives"
+                ? "bg-background shadow text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Geteilte Ablagen
+          </button>
+        </div>
 
-          <TabsContent value="my-drive" className="mt-4">
+        {/* Content */}
+        {activeTab === "my-drive" ? (
+          <div className="mt-4">
             {renderBreadcrumb()}
             <ScrollArea className="h-[350px] mt-2">
               {loading ? (
@@ -261,9 +276,9 @@ const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId 
                 renderFileList()
               )}
             </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="shared-drives" className="mt-4">
+          </div>
+        ) : (
+          <div className="mt-4">
             {isInSharedDrive ? (
               <>
                 {renderBreadcrumb()}
@@ -310,8 +325,8 @@ const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId 
                 )}
               </ScrollArea>
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
 
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
