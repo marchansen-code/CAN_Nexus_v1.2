@@ -9,7 +9,7 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://knowledge-hub-532.preview.emergentagent.com"
+    BASE_URL = "https://email-hub-27.preview.emergentagent.com"
 
 
 class TestApiHealth:
