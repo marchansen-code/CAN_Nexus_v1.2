@@ -429,20 +429,26 @@ async def import_from_drive(
         # Process document content
         structured_content = await process_document_content(file_path, mime_type)
         
+        # Determine file type
+        file_ext = os.path.splitext(file_name)[1].lower()
+        
         document = {
-            "doc_id": doc_id,
+            "document_id": doc_id,
             "filename": file_name,
             "original_filename": file_name,
             "mime_type": mime_type,
+            "file_type": file_ext,
             "file_size": len(file_content),
             "file_path": file_path,
             "folder_id": folder_id,
             "uploaded_by": user.user_id,
             "uploaded_by_name": user.name,
             "uploaded_at": datetime.now(timezone.utc).isoformat(),
+            "processed_at": datetime.now(timezone.utc).isoformat(),
             "source": "google_drive",
             "drive_file_id": file_id,
             "structured_content": structured_content,
+            "extracted_text": structured_content.get("extracted_text", "") if structured_content else "",
             "status": "completed",
             "page_count": structured_content.get("page_count", 1) if structured_content else 1
         }

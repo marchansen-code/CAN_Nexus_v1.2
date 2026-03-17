@@ -10,32 +10,39 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Folder, FileText, ArrowLeft, Check, File, Table2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, Folder, FileText, ArrowLeft, Check, File, Table2, HardDrive, Users } from "lucide-react";
 
 const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId }) => {
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState([]);
   const [folders, setFolders] = useState([]);
   const [sharedDrives, setSharedDrives] = useState([]);
+  const [sharedDrivesLoading, setSharedDrivesLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("my-drive");
   const [currentFolderId, setCurrentFolderId] = useState("root");
-  const [folderPath, setFolderPath] = useState([{ id: "root", name: "Mein Drive" }]);
+  const [folderPath, setFolderPath] = useState([{ id: "root", name: "Meine Ablage" }]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     if (open) {
+      setActiveTab("my-drive");
       loadFiles("root");
+      setFolderPath([{ id: "root", name: "Meine Ablage" }]);
       loadSharedDrives();
-      setFolderPath([{ id: "root", name: "Mein Drive" }]);
     }
   }, [open]);
 
   const loadSharedDrives = async () => {
+    setSharedDrivesLoading(true);
     try {
       const response = await axios.get(`${API}/drive/shared-drives`);
       setSharedDrives(response.data.drives || []);
     } catch (error) {
       console.error("Failed to load shared drives:", error);
+    } finally {
+      setSharedDrivesLoading(false);
     }
   };
 
@@ -74,6 +81,20 @@ const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId 
     const newPath = folderPath.slice(0, index + 1);
     setFolderPath(newPath);
     loadFiles(newPath[newPath.length - 1].id);
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setSelectedFile(null);
+    if (tab === "my-drive") {
+      setFolderPath([{ id: "root", name: "Meine Ablage" }]);
+      loadFiles("root");
+    }
+  };
+
+  const handleSharedDriveClick = (drive) => {
+    setFolderPath([{ id: drive.id, name: drive.name }]);
+    loadFiles(drive.id);
   };
 
   const handleImport = async () => {
@@ -115,6 +136,75 @@ const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId 
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const renderBreadcrumb = () => (
+    <div className="flex items-center gap-1 text-sm text-slate-600 border-b pb-2 px-1">
+      {folderPath.length > 1 && (
+        <Button variant="ghost" size="sm" onClick={navigateBack} className="h-7 px-2">
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+      )}
+      {folderPath.map((item, index) => (
+        <React.Fragment key={item.id}>
+          {index > 0 && <span className="text-slate-400">/</span>}
+          <button
+            onClick={() => navigateToPathItem(index)}
+            className="hover:text-slate-900 hover:underline truncate max-w-[150px]"
+          >
+            {item.name}
+          </button>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+
+  const renderFileList = () => (
+    <div className="space-y-1">
+      {/* Folders */}
+      {folders.map((folder) => (
+        <div
+          key={folder.id}
+          onClick={() => navigateToFolder(folder)}
+          className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+        >
+          <Folder className="w-5 h-5 text-amber-500" />
+          <span className="flex-1 font-medium truncate">{folder.name}</span>
+        </div>
+      ))}
+
+      {/* Files */}
+      {files.map((file) => (
+        <div
+          key={file.id}
+          onClick={() => setSelectedFile(file)}
+          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+            selectedFile?.id === file.id
+              ? "bg-blue-50 border border-blue-200"
+              : "hover:bg-slate-100"
+          }`}
+        >
+          {getFileIcon(file.mimeType)}
+          <div className="flex-1 min-w-0">
+            <p className="font-medium truncate">{file.name}</p>
+            <p className="text-xs text-slate-500">
+              {file.isGoogleDoc && <span className="text-blue-600">Google Docs • </span>}
+              {formatFileSize(file.size)}
+            </p>
+          </div>
+          {selectedFile?.id === file.id && (
+            <Check className="w-5 h-5 text-blue-600 flex-shrink-0" />
+          )}
+        </div>
+      ))}
+
+      {folders.length === 0 && files.length === 0 && !loading && (
+        <div className="text-center py-12 text-slate-500">
+          <p>Keine unterstützten Dateien in diesem Ordner</p>
+          <p className="text-sm mt-1">Unterstützt: PDF, DOCX, TXT, CSV, XLSX</p>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh]">
@@ -132,105 +222,80 @@ const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId 
           </DialogTitle>
         </DialogHeader>
 
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-1 text-sm text-slate-600 border-b pb-2">
-          {folderPath.length > 1 && (
-            <Button variant="ghost" size="sm" onClick={navigateBack} className="h-7 px-2">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          )}
-          {folderPath.map((item, index) => (
-            <React.Fragment key={item.id}>
-              {index > 0 && <span className="text-slate-400">/</span>}
-              <button
-                onClick={() => navigateToPathItem(index)}
-                className="hover:text-slate-900 hover:underline"
-              >
-                {item.name}
-              </button>
-            </React.Fragment>
-          ))}
-        </div>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="my-drive" className="gap-2">
+              <HardDrive className="w-4 h-4" />
+              Meine Ablage
+            </TabsTrigger>
+            <TabsTrigger value="shared-drives" className="gap-2">
+              <Users className="w-4 h-4" />
+              Geteilte Ablagen
+            </TabsTrigger>
+          </TabsList>
 
-        <ScrollArea className="h-[400px] pr-4">
-          {loading ? (
-            <div className="flex items-center justify-center h-full">
-              <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {/* Shared Drives (only show at root level) */}
-              {currentFolderId === "root" && sharedDrives.length > 0 && (
-                <>
-                  <div className="text-xs text-slate-500 font-medium px-3 py-2 border-b mb-1">
-                    Geteilte Ablagen
-                  </div>
-                  {sharedDrives.map((drive) => (
-                    <div
-                      key={drive.id}
-                      onClick={() => {
-                        setFolderPath([{ id: drive.id, name: drive.name }]);
-                        loadFiles(drive.id);
-                      }}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
-                    >
-                      <Folder className="w-5 h-5 text-blue-500" />
-                      <span className="flex-1 font-medium">{drive.name}</span>
-                      <span className="text-xs text-slate-400">Geteilte Ablage</span>
+          <TabsContent value="my-drive" className="mt-4">
+            {renderBreadcrumb()}
+            <ScrollArea className="h-[350px] mt-2">
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                </div>
+              ) : (
+                renderFileList()
+              )}
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="shared-drives" className="mt-4">
+            {folderPath.length > 1 ? (
+              <>
+                {renderBreadcrumb()}
+                <ScrollArea className="h-[350px] mt-2">
+                  {loading ? (
+                    <div className="flex items-center justify-center h-full">
+                      <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
                     </div>
-                  ))}
-                  <div className="text-xs text-slate-500 font-medium px-3 py-2 border-b mt-2 mb-1">
-                    Mein Drive
-                  </div>
-                </>
-              )}
-              
-              {/* Folders */}
-              {folders.map((folder) => (
-                <div
-                  key={folder.id}
-                  onClick={() => navigateToFolder(folder)}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
-                >
-                  <Folder className="w-5 h-5 text-amber-500" />
-                  <span className="flex-1 font-medium">{folder.name}</span>
-                </div>
-              ))}
-
-              {/* Files */}
-              {files.map((file) => (
-                <div
-                  key={file.id}
-                  onClick={() => setSelectedFile(file)}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedFile?.id === file.id
-                      ? "bg-blue-50 border border-blue-200"
-                      : "hover:bg-slate-100"
-                  }`}
-                >
-                  {getFileIcon(file.mimeType)}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{file.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {file.isGoogleDoc && <span className="text-blue-600">Google Docs • </span>}
-                      {formatFileSize(file.size)}
-                    </p>
-                  </div>
-                  {selectedFile?.id === file.id && (
-                    <Check className="w-5 h-5 text-blue-600" />
+                  ) : (
+                    renderFileList()
                   )}
-                </div>
-              ))}
-
-              {folders.length === 0 && files.length === 0 && (
-                <div className="text-center py-12 text-slate-500">
-                  <p>Keine unterstützten Dateien in diesem Ordner</p>
-                  <p className="text-sm mt-1">Unterstützt: PDF, DOCX, TXT, CSV, XLSX</p>
-                </div>
-              )}
-            </div>
-          )}
-        </ScrollArea>
+                </ScrollArea>
+              </>
+            ) : (
+              <ScrollArea className="h-[380px]">
+                {sharedDrivesLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                  </div>
+                ) : sharedDrives.length === 0 ? (
+                  <div className="text-center py-12 text-slate-500">
+                    <Users className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                    <p>Keine geteilten Ablagen verfügbar</p>
+                    <p className="text-sm mt-1">Sie haben Zugriff auf keine geteilten Ablagen.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {sharedDrives.map((drive) => (
+                      <div
+                        key={drive.id}
+                        onClick={() => handleSharedDriveClick(drive)}
+                        className="flex items-center gap-3 p-4 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors border"
+                      >
+                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <Users className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{drive.name}</p>
+                          <p className="text-xs text-slate-500">Geteilte Ablage</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            )}
+          </TabsContent>
+        </Tabs>
 
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
