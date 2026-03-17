@@ -53,23 +53,29 @@ async def export_backup(user: User = Depends(get_current_user)):
     articles = await db.articles.find({}, {"_id": 0}).to_list(10000)
     categories = await db.categories.find({}, {"_id": 0}).to_list(1000)
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    groups = await db.groups.find({}, {"_id": 0}).to_list(1000)
     documents_meta = await db.documents.find({}, {"_id": 0, "file_path": 0, "temp_path": 0}).to_list(1000)
+    recycle_bin = await db.recycle_bin.find({}, {"_id": 0}).to_list(10000)
     
     backup_data = {
-        "version": "2.0.0",
+        "version": "2.1.0",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "created_by": user.email,
         "statistics": {
             "articles": len(articles),
             "categories": len(categories),
             "users": len(users),
-            "documents": len(documents_meta)
+            "groups": len(groups),
+            "documents": len(documents_meta),
+            "recycle_bin": len(recycle_bin)
         },
         "data": {
             "articles": articles,
             "categories": categories,
             "users": users,
-            "documents_metadata": documents_meta
+            "groups": groups,
+            "documents_metadata": documents_meta,
+            "recycle_bin": recycle_bin
         }
     }
     
@@ -228,6 +234,8 @@ class BackupImportRequest(BaseModel):
     import_articles: bool = True
     import_categories: bool = True
     import_users: bool = True
+    import_groups: bool = True
+    import_recycle_bin: bool = True
     merge_mode: bool = True
 
 
@@ -245,7 +253,9 @@ async def import_backup(request: BackupImportRequest, user: User = Depends(get_c
     results = {
         "articles": {"imported": 0, "skipped": 0, "errors": 0},
         "categories": {"imported": 0, "skipped": 0, "errors": 0},
-        "users": {"imported": 0, "skipped": 0, "errors": 0}
+        "users": {"imported": 0, "skipped": 0, "errors": 0},
+        "groups": {"imported": 0, "skipped": 0, "errors": 0},
+        "recycle_bin": {"imported": 0, "skipped": 0, "errors": 0}
     }
     
     data = backup["data"]
@@ -266,6 +276,23 @@ async def import_backup(request: BackupImportRequest, user: User = Depends(get_c
             except Exception as e:
                 logger.error(f"Category import error: {e}")
                 results["categories"]["errors"] += 1
+    
+    if request.import_groups and "groups" in data:
+        for grp in data["groups"]:
+            try:
+                existing = await db.groups.find_one({"group_id": grp.get("group_id")})
+                if existing:
+                    if not request.merge_mode:
+                        await db.groups.replace_one({"group_id": grp["group_id"]}, grp)
+                        results["groups"]["imported"] += 1
+                    else:
+                        results["groups"]["skipped"] += 1
+                else:
+                    await db.groups.insert_one(grp)
+                    results["groups"]["imported"] += 1
+            except Exception as e:
+                logger.error(f"Group import error: {e}")
+                results["groups"]["errors"] += 1
     
     if request.import_articles and "articles" in data:
         for art in data["articles"]:
@@ -301,6 +328,30 @@ async def import_backup(request: BackupImportRequest, user: User = Depends(get_c
                 logger.error(f"User import error: {e}")
                 results["users"]["errors"] += 1
     
+    if request.import_recycle_bin and "recycle_bin" in data:
+        for item in data["recycle_bin"]:
+            try:
+                # Use a combination of item_type and item_id as unique identifier
+                existing = await db.recycle_bin.find_one({
+                    "item_type": item.get("item_type"),
+                    "item_id": item.get("item_id")
+                })
+                if existing:
+                    if not request.merge_mode:
+                        await db.recycle_bin.replace_one({
+                            "item_type": item["item_type"],
+                            "item_id": item["item_id"]
+                        }, item)
+                        results["recycle_bin"]["imported"] += 1
+                    else:
+                        results["recycle_bin"]["skipped"] += 1
+                else:
+                    await db.recycle_bin.insert_one(item)
+                    results["recycle_bin"]["imported"] += 1
+            except Exception as e:
+                logger.error(f"Recycle bin import error: {e}")
+                results["recycle_bin"]["errors"] += 1
+    
     return {
         "message": "Backup-Import abgeschlossen",
         "results": results,
@@ -318,5 +369,7 @@ async def preview_backup_info(user: User = Depends(get_current_user)):
         "articles": await db.articles.count_documents({}),
         "categories": await db.categories.count_documents({}),
         "users": await db.users.count_documents({}),
-        "documents": await db.documents.count_documents({})
+        "groups": await db.groups.count_documents({}),
+        "documents": await db.documents.count_documents({}),
+        "recycle_bin": await db.recycle_bin.count_documents({})
     }
