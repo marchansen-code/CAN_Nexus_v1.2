@@ -287,13 +287,14 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - **Passwort**: CanusaNexus2024!
 
 ## Test Coverage
+- Iteration 22: Backend 100% (14/14), Frontend 100% (11/11) - Notification System
 - Iteration 29: Backend 100% (14/14), Frontend 100% (12/12)
 - Iteration 28: Backend 100% (20/20), Frontend 100% (17/17)
 - Iteration 27: Backend 100% (17/17), Frontend 100% (38/38)
 - Iteration 26: Backend 100% (17/17), Frontend 100% (69/69)
 - Iteration 25: Backend 100% (22/22), Frontend 100% (34/34)
 - Iteration 24: Backend 100% (13/13), Frontend 100% (33/33)
-- Last tested: 16.03.2026
+- Last tested: 17.03.2026
 
 ## Backlog
 
@@ -305,32 +306,55 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 
 ### P3 (Nice to Have)
 - [ ] OCR für gescannte PDFs
-- [ ] E-Mail-Benachrichtigungen
+- [x] ~~E-Mail-Benachrichtigungen~~ (Erledigt in Iteration 22 - 17.03.2026)
 - [x] ~~Hochwertige PDF-zu-HTML-Konvertierung~~ (Erledigt in Iteration 24)
 - [x] ~~Vollwertiger PDF-Viewer~~ (Erledigt in Iteration 25)
+
+## Benachrichtigungssystem (Iteration 22) - 17.03.2026
+- ✅ **@-Mentions Benachrichtigungen** - Benutzer werden per E-Mail benachrichtigt, wenn sie in einem Artikel erwähnt werden
+- ✅ **Review-Anfragen** - Autoren können Reviewer für Entwürfe einladen, die per E-Mail benachrichtigt werden und temporäre Leseberechtigung erhalten
+- ✅ **Favoriten-Updates** - Opt-in E-Mail-Benachrichtigungen bei Änderungen an favorisierten Artikeln
+- ✅ **Statusänderungen** - E-Mail-Benachrichtigung wenn Benutzerrolle oder Kontostatus geändert wird
+- ✅ **Kontaktperson-Änderung** - E-Mail-Benachrichtigung wenn Benutzer als Ansprechpartner für Artikel zugewiesen wird
+- ✅ **Benachrichtigungs-Einstellungen** - Benutzer können ihre E-Mail-Benachrichtigungen in Einstellungen > Benachrichtigungen konfigurieren
+- ✅ **Test-E-Mail Funktion** - Admins können Test-E-Mails senden um die SMTP-Konfiguration zu prüfen
+- **Neue Komponenten**:
+  - `ReviewRequestDialog.jsx` - Dialog zum Einladen von Reviewern
+  - `NotificationSettings.jsx` - Einstellungsseite für E-Mail-Benachrichtigungen
+- **Neue API-Endpunkte**:
+  - `GET /api/notifications/preferences` - Benachrichtigungseinstellungen abrufen
+  - `PUT /api/notifications/preferences` - Benachrichtigungseinstellungen aktualisieren
+  - `POST /api/notifications/review-request` - Review-Anfrage senden
+  - `GET /api/notifications/article/{id}/reviewers` - Reviewer eines Artikels abrufen
+  - `DELETE /api/notifications/review-request/{article_id}/{reviewer_id}` - Reviewer entfernen
+  - `POST /api/notifications/test-email` - Test-E-Mail senden (Admin only)
+- **SMTP-Konfiguration**: Gmail erfordert App-spezifisches Passwort (nicht normales Passwort)
 
 ## Backend Architektur (nach Refactoring)
 
 ```
 /app/backend/
-├── server.py          # 142 Zeilen - Hauptanwendung, Router-Einbindung
-├── database.py        # 20 Zeilen - MongoDB-Verbindung
-├── dependencies.py    # 77 Zeilen - Auth-Funktionen
-├── models.py          # 209 Zeilen - Pydantic-Modelle
+├── server.py          # Hauptanwendung, Router-Einbindung
+├── database.py        # MongoDB-Verbindung
+├── dependencies.py    # Auth-Funktionen
+├── models.py          # Pydantic-Modelle
+├── services/
+│   └── email_service.py # E-Mail-Versand für Benachrichtigungen
 └── routes/
-    ├── auth.py        # 91 Zeilen - Login, Logout
-    ├── users.py       # 160 Zeilen - Benutzer-CRUD
-    ├── groups.py      # 119 Zeilen - Gruppen-CRUD
-    ├── categories.py  # 65 Zeilen - Kategorien-CRUD
-    ├── articles.py    # 286 Zeilen - Artikel, Kommentare, Tags
-    ├── search.py      # 129 Zeilen - Suche
-    ├── documents.py   # 205 Zeilen - Dokument-Upload
-    ├── recycle_bin.py # 157 Zeilen - Papierkorb
-    ├── images.py      # 79 Zeilen - Bilder-Upload
-    ├── stats.py       # 118 Zeilen - Statistiken, Widget
-    ├── backup.py      # 322 Zeilen - Backup/Export/Import
-    ├── exports.py     # 351 Zeilen - PDF/DOCX-Export, Favoriten
+    ├── auth.py        # Login, Logout
+    ├── users.py       # Benutzer-CRUD mit Status-Benachrichtigungen
+    ├── groups.py      # Gruppen-CRUD
+    ├── categories.py  # Kategorien-CRUD
+    ├── articles.py    # Artikel, Kommentare, Tags mit Benachrichtigungen
+    ├── search.py      # Suche
+    ├── documents.py   # Dokument-Upload
+    ├── recycle_bin.py # Papierkorb
+    ├── images.py      # Bilder-Upload
+    ├── stats.py       # Statistiken, Widget
+    ├── backup.py      # Backup/Export/Import
+    ├── exports.py     # PDF/DOCX-Export, Favoriten
     ├── versions.py    # Artikel-Versionierung
     ├── google_auth.py # Google OAuth Integration
-    └── google_drive.py # Google Drive Import/Export
+    ├── google_drive.py # Google Drive Import/Export
+    └── notifications.py # E-Mail-Benachrichtigungssystem
 ```
