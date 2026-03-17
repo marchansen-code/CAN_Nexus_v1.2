@@ -24,12 +24,14 @@ const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId 
   const [folderPath, setFolderPath] = useState([{ id: "root", name: "Meine Ablage" }]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [isInSharedDrive, setIsInSharedDrive] = useState(false);
 
   useEffect(() => {
     if (open) {
       setActiveTab("my-drive");
       loadFiles("root");
       setFolderPath([{ id: "root", name: "Meine Ablage" }]);
+      setIsInSharedDrive(false);
       loadSharedDrives();
     }
   }, [open]);
@@ -74,6 +76,12 @@ const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId 
       const newPath = folderPath.slice(0, -1);
       setFolderPath(newPath);
       loadFiles(newPath[newPath.length - 1].id);
+    } else if (isInSharedDrive && folderPath.length === 1) {
+      // Go back to shared drives list
+      setIsInSharedDrive(false);
+      setFolderPath([]);
+      setFiles([]);
+      setFolders([]);
     }
   };
 
@@ -88,11 +96,19 @@ const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId 
     setSelectedFile(null);
     if (tab === "my-drive") {
       setFolderPath([{ id: "root", name: "Meine Ablage" }]);
+      setIsInSharedDrive(false);
       loadFiles("root");
+    } else {
+      // Reset to shared drives list
+      setIsInSharedDrive(false);
+      setFolderPath([]);
+      setFiles([]);
+      setFolders([]);
     }
   };
 
   const handleSharedDriveClick = (drive) => {
+    setIsInSharedDrive(true);
     setFolderPath([{ id: drive.id, name: drive.name }]);
     loadFiles(drive.id);
   };
@@ -138,7 +154,7 @@ const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId 
 
   const renderBreadcrumb = () => (
     <div className="flex items-center gap-1 text-sm text-slate-600 border-b pb-2 px-1">
-      {folderPath.length > 1 && (
+      {(folderPath.length > 1 || (isInSharedDrive && folderPath.length >= 1)) && (
         <Button variant="ghost" size="sm" onClick={navigateBack} className="h-7 px-2">
           <ArrowLeft className="w-4 h-4" />
         </Button>
@@ -248,7 +264,7 @@ const GoogleDriveImportDialog = ({ open, onOpenChange, onImport, targetFolderId 
           </TabsContent>
 
           <TabsContent value="shared-drives" className="mt-4">
-            {folderPath.length > 1 ? (
+            {isInSharedDrive ? (
               <>
                 {renderBreadcrumb()}
                 <ScrollArea className="h-[350px] mt-2">
