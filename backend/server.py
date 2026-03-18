@@ -75,6 +75,26 @@ async def root():
     return {"message": "CANUSA Knowledge Hub API", "version": "2.0.0"}
 
 
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint with environment status (for debugging)."""
+    import os
+    return {
+        "status": "ok",
+        "version": "2.0.0",
+        "env_check": {
+            "MONGO_URL": "configured" if os.environ.get("MONGO_URL") else "MISSING",
+            "DB_NAME": os.environ.get("DB_NAME", "NOT SET"),
+            "GOOGLE_CLIENT_ID": "configured" if os.environ.get("GOOGLE_CLIENT_ID") else "MISSING",
+            "GOOGLE_CLIENT_SECRET": "configured" if os.environ.get("GOOGLE_CLIENT_SECRET") else "MISSING",
+            "SMTP_SERVER": os.environ.get("SMTP_SERVER", "NOT SET"),
+            "SMTP_USERNAME": os.environ.get("SMTP_USERNAME", "NOT SET"),
+            "SMTP_PASSWORD": "configured" if os.environ.get("SMTP_PASSWORD") else "MISSING",
+            "APP_URL": os.environ.get("APP_URL", "NOT SET"),
+        }
+    }
+
+
 @app.on_event("startup")
 async def startup():
     """Initialize database and create default admin."""
