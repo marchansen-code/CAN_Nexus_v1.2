@@ -1763,6 +1763,7 @@ const RichTextEditor = ({ content, onChange, placeholder = "Inhalt eingeben...",
           <div className="flex-1 min-h-0 overflow-auto">
             {documentPreview && (
               documentPreview.is_image && documentPreview.image_id ? (
+                // Image preview
                 <div className="flex items-center justify-center p-4">
                   <img 
                     src={`${API}/images/${documentPreview.image_id}`} 
@@ -1770,13 +1771,33 @@ const RichTextEditor = ({ content, onChange, placeholder = "Inhalt eingeben...",
                     className="max-w-full max-h-[60vh] object-contain rounded-lg"
                   />
                 </div>
-              ) : (
+              ) : documentPreview.file_type === '.pdf' ? (
+                // PDF preview via iframe
                 <div className="h-[60vh]">
                   <iframe
                     src={`${API}/documents/${documentPreview.document_id}/file`}
                     className="w-full h-full border-0 rounded-lg"
                     title={documentPreview.filename}
                   />
+                </div>
+              ) : documentPreview.html_content ? (
+                // DOCX, XLSX, CSV etc. - show HTML content
+                <div className="p-4 prose prose-slate dark:prose-invert max-w-none">
+                  <div dangerouslySetInnerHTML={{ __html: documentPreview.html_content }} />
+                </div>
+              ) : documentPreview.extracted_text ? (
+                // Fallback: show extracted text
+                <div className="p-4">
+                  <pre className="whitespace-pre-wrap text-sm font-mono bg-slate-50 dark:bg-slate-900 p-4 rounded-lg overflow-auto max-h-[60vh]">
+                    {documentPreview.extracted_text}
+                  </pre>
+                </div>
+              ) : (
+                // No preview available
+                <div className="flex flex-col items-center justify-center h-[40vh] text-muted-foreground">
+                  <FileText className="w-16 h-16 mb-4 opacity-30" />
+                  <p>Keine Vorschau verfügbar</p>
+                  <p className="text-sm">Klicken Sie unten, um die Datei zu öffnen</p>
                 </div>
               )
             )}
