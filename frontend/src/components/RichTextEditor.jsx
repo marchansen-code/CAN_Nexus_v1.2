@@ -79,9 +79,12 @@ import {
   Images,
   ExternalLink,
   FolderOpen,
+  Folder,
   Search,
   Eye,
-  X
+  X,
+  ChevronRight,
+  Home
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
@@ -229,6 +232,9 @@ const EditorToolbar = ({ editor, onImageUpload, isFullscreen, onToggleFullscreen
   const [linkText, setLinkText] = React.useState('');
   const [hasSelectedText, setHasSelectedText] = React.useState(false);
   const [documents, setDocuments] = React.useState([]);
+  const [folders, setFolders] = React.useState([]);
+  const [currentFolderId, setCurrentFolderId] = React.useState(null);
+  const [folderPath, setFolderPath] = React.useState([]); // Breadcrumb path
   const [documentSearch, setDocumentSearch] = React.useState('');
   const [selectedDocument, setSelectedDocument] = React.useState(null);
   const [documentLinkType, setDocumentLinkType] = React.useState('text'); // 'thumbnail', 'text', 'short'
@@ -239,19 +245,73 @@ const EditorToolbar = ({ editor, onImageUpload, isFullscreen, onToggleFullscreen
   const [pendingYoutubeUrl, setPendingYoutubeUrl] = React.useState('');
   const [youtubeDisplayType, setYoutubeDisplayType] = React.useState('preview'); // 'preview' or 'link'
 
+  // Load folders for document browser
+  const loadFolders = async () => {
+    try {
+      const response = await axios.get(`${API}/document-folders`);
+      setFolders(response.data || []);
+    } catch (error) {
+      console.error('Failed to load folders:', error);
+    }
+  };
+
   // Load documents for link dialog
-  const loadDocuments = async (search = '') => {
+  const loadDocuments = async (folderId = null, search = '') => {
     setLoadingDocuments(true);
     try {
       const response = await axios.get(`${API}/documents`, {
         params: { search: search || undefined }
       });
-      setDocuments(response.data || []);
+      let docs = response.data || [];
+      
+      // Filter by folder if specified
+      if (folderId !== null) {
+        docs = docs.filter(d => d.folder_id === folderId);
+      } else if (!search) {
+        // Show only root-level documents when no search
+        docs = docs.filter(d => !d.folder_id);
+      }
+      
+      setDocuments(docs);
     } catch (error) {
       console.error('Failed to load documents:', error);
     } finally {
       setLoadingDocuments(false);
     }
+  };
+
+  // Navigate to folder
+  const navigateToFolder = (folder) => {
+    if (folder) {
+      setCurrentFolderId(folder.folder_id);
+      setFolderPath([...folderPath, folder]);
+    } else {
+      setCurrentFolderId(null);
+      setFolderPath([]);
+    }
+    setSelectedDocument(null);
+    loadDocuments(folder?.folder_id || null);
+  };
+
+  // Navigate back in breadcrumb
+  const navigateToBreadcrumb = (index) => {
+    if (index === -1) {
+      // Go to root
+      setCurrentFolderId(null);
+      setFolderPath([]);
+      loadDocuments(null);
+    } else {
+      const folder = folderPath[index];
+      setCurrentFolderId(folder.folder_id);
+      setFolderPath(folderPath.slice(0, index + 1));
+      loadDocuments(folder.folder_id);
+    }
+    setSelectedDocument(null);
+  };
+
+  // Get subfolders for current folder
+  const getCurrentSubfolders = () => {
+    return folders.filter(f => f.parent_id === currentFolderId);
   };
 
   // Open link dialog with context
@@ -264,7 +324,11 @@ const EditorToolbar = ({ editor, onImageUpload, isFullscreen, onToggleFullscreen
     setSelectedDocument(null);
     setDocumentLinkType(selectedText ? 'text' : 'short');
     setLinkTab('url');
-    loadDocuments();
+    setCurrentFolderId(null);
+    setFolderPath([]);
+    setDocumentSearch('');
+    loadFolders();
+    loadDocuments(null);
     setShowLinkDialog(true);
   };
 
@@ -753,35 +817,89 @@ const EditorToolbar = ({ editor, onImageUpload, isFullscreen, onToggleFullscreen
             </TabsContent>
 
             <TabsContent value="document" className="space-y-4 mt-4">
+              {/* Search */}
               <div className="space-y-2">
-                <Label>Dokument suchen</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Suchen..."
+                    placeholder="Dokument suchen..."
                     value={documentSearch}
                     onChange={(e) => {
                       setDocumentSearch(e.target.value);
-                      loadDocuments(e.target.value);
+                      if (e.target.value) {
+                        // Search all documents
+                        loadDocuments(null, e.target.value);
+                      } else {
+                        // Return to current folder
+                        loadDocuments(currentFolderId);
+                      }
                     }}
                     className="pl-9"
                   />
                 </div>
               </div>
 
-              <ScrollArea className="h-[200px] border rounded-md p-2">
+              {/* Breadcrumb Navigation */}
+              {!documentSearch && (
+                <div className="flex items-center gap-1 text-sm flex-wrap">
+                  <button 
+                    onClick={() => navigateToBreadcrumb(-1)}
+                    className={cn(
+                      "flex items-center gap-1 px-2 py-1 rounded hover:bg-muted transition-colors",
+                      folderPath.length === 0 && "font-medium text-indigo-600"
+                    )}
+                  >
+                    <Home className="w-4 h-4" />
+                    <span>Dokumente</span>
+                  </button>
+                  {folderPath.map((folder, index) => (
+                    <React.Fragment key={folder.folder_id}>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      <button
+                        onClick={() => navigateToBreadcrumb(index)}
+                        className={cn(
+                          "px-2 py-1 rounded hover:bg-muted transition-colors",
+                          index === folderPath.length - 1 && "font-medium text-indigo-600"
+                        )}
+                      >
+                        {folder.name}
+                      </button>
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+
+              {/* Folder and Document List */}
+              <ScrollArea className="h-[220px] border rounded-md">
                 {loadingDocuments ? (
-                  <div className="text-center py-4 text-muted-foreground">Laden...</div>
-                ) : documents.length === 0 ? (
-                  <div className="text-center py-4 text-muted-foreground">Keine Dokumente gefunden</div>
+                  <div className="text-center py-8 text-muted-foreground">Laden...</div>
                 ) : (
-                  <div className="space-y-1">
-                    {documents.slice(0, 20).map(doc => (
+                  <div className="p-2 space-y-1">
+                    {/* Subfolders */}
+                    {!documentSearch && getCurrentSubfolders().map(folder => (
+                      <button
+                        key={folder.folder_id}
+                        onClick={() => navigateToFolder(folder)}
+                        className="w-full flex items-center gap-3 p-2 rounded text-left text-sm hover:bg-muted transition-colors"
+                      >
+                        <Folder className="w-5 h-5 text-amber-500 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate font-medium">{folder.name}</p>
+                          {folder.description && (
+                            <p className="text-xs text-muted-foreground truncate">{folder.description}</p>
+                          )}
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    ))}
+                    
+                    {/* Documents */}
+                    {documents.map(doc => (
                       <button
                         key={doc.document_id}
                         onClick={() => setSelectedDocument(doc)}
                         className={cn(
-                          "w-full flex items-center gap-2 p-2 rounded text-left text-sm hover:bg-muted transition-colors",
+                          "w-full flex items-center gap-3 p-2 rounded text-left text-sm hover:bg-muted transition-colors",
                           selectedDocument?.document_id === doc.document_id && "bg-indigo-50 border border-indigo-200"
                         )}
                       >
@@ -799,11 +917,26 @@ const EditorToolbar = ({ editor, onImageUpload, isFullscreen, onToggleFullscreen
                         <div className="flex-1 min-w-0">
                           <p className="truncate font-medium">{doc.filename}</p>
                           <p className="text-xs text-muted-foreground">
-                            {doc.file_size ? `${(doc.file_size / 1024).toFixed(1)} KB` : ''}
+                            {doc.file_type} {doc.file_size ? `• ${(doc.file_size / 1024).toFixed(1)} KB` : ''}
                           </p>
                         </div>
                       </button>
                     ))}
+                    
+                    {/* Empty state */}
+                    {!documentSearch && getCurrentSubfolders().length === 0 && documents.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <FolderOpen className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                        <p>Dieser Ordner ist leer</p>
+                      </div>
+                    )}
+                    
+                    {documentSearch && documents.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Search className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                        <p>Keine Dokumente gefunden</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </ScrollArea>
