@@ -436,6 +436,13 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
   - Farbschema-Vorlagen: CANUSA Standard, Ozean Blau, Wald Grün, Sonnenuntergang, Lavendel, Mitternacht
   - "Auf Standard zurücksetzen" Button
   - "Einstellungen speichern" Button
+- ✅ **Dynamische Farbschema-Anwendung** - Primärfarben ändern sich überall in der UI:
+  - Sidebar-Navigation aktiver Zustand
+  - Alle primären Buttons (Neu, Speichern, etc.)
+  - StatCard-Icons auf dem Dashboard
+  - Login-Seite Branding und Buttons
+  - Avatar-Fallback-Farben
+  - Kategoriebaum Auswahl
 - ✅ **Theme aus Header entfernt** - Theme-Indikator verlinkt jetzt zu den Einstellungen
 - ✅ **Einstellungen für alle Rollen sichtbar** - Nicht nur Admins können auf Einstellungen zugreifen
 - ✅ **Admin: Theme zurücksetzen** - Neuer "Theme" Button in der Benutzerverwaltung
@@ -444,9 +451,22 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
   - `GET /api/users/me/theme` - Theme-Einstellungen des aktuellen Benutzers abrufen
   - `PUT /api/users/me/theme` - Theme-Einstellungen speichern
   - `PUT /api/users/{id}/reset-theme` - Theme eines Benutzers zurücksetzen (Admin)
-- **Neue Komponenten**:
+- **Neue/Aktualisierte Komponenten**:
   - `ThemeSettings.jsx` - Erscheinungsbild-Einstellungskomponente
-  - `ThemeProvider.jsx` - Erweitert mit Farbschema-Support und Server-Sync
+  - `ThemeProvider.jsx` - Erweitert mit Farbschema-Support, CSS-Variablen und Server-Sync
+- **Aktualisierte Seiten** (für dynamische Primärfarben):
+  - `Layout.jsx` - Sidebar-Navigation
+  - `Dashboard.jsx` - StatCards, Buttons, Avatars
+  - `Articles.jsx` - Kategorie-Baum, Buttons
+  - `ArticleEditor.jsx` - Kategorie-Checkboxen, Speichern-Button
+  - `ArticleView.jsx` - Export-Button
+  - `Login.jsx` - Header, Feature-Icons, Login-Button
+  - `Landing.jsx` - Branding, CTA-Buttons
+  - `Groups.jsx` - Erstellen/Speichern-Buttons
+  - `Backup.jsx` - Alle primären Buttons
+- **Neue CSS-Utilities**:
+  - `bg-theme-primary`, `text-theme-primary`, `border-theme-primary`
+  - `bg-theme-primary-light`, `bg-theme-primary-lighter`
 
 ## Known Issues / Backlog
 

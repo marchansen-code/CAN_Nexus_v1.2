@@ -76,7 +76,7 @@ const CategoryTreeItem = ({ category, categories, selectedIds, onToggle, expande
       <div 
         className={cn(
           "flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer hover:bg-accent transition-colors",
-          isSelected && "bg-red-50 dark:bg-red-900/20"
+          isSelected && "bg-primary/10 dark:bg-primary/20"
         )}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
       >
@@ -109,7 +109,7 @@ const CategoryTreeItem = ({ category, categories, selectedIds, onToggle, expande
           id={`cat-tree-${category.category_id}`}
           checked={isSelected}
           onCheckedChange={() => onToggle(category.category_id)}
-          className="data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
         <label 
           htmlFor={`cat-tree-${category.category_id}`} 
@@ -430,7 +430,7 @@ const ArticleEditor = () => {
             <Save className="w-4 h-4 mr-2" />
             Speichern
           </Button>
-          <Button onClick={() => handleSave("published")} disabled={saving} className="bg-red-500 hover:bg-red-600">
+          <Button onClick={() => handleSave("published")} disabled={saving} className="bg-primary hover:bg-primary/90">
             {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
             Veröffentlichen
           </Button>

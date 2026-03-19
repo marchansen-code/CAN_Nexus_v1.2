@@ -356,7 +356,7 @@ const Backup = () => {
           <Button 
             onClick={handleExport} 
             disabled={exporting}
-            className="bg-red-500 hover:bg-red-600"
+            className="bg-primary hover:bg-primary/90"
             data-testid="export-backup-btn"
           >
             {exporting ? (
@@ -598,7 +598,7 @@ const Backup = () => {
               <Button 
                 onClick={() => setConfirmDialog(true)}
                 disabled={importing}
-                className="w-full bg-red-500 hover:bg-red-600"
+                className="w-full bg-primary hover:bg-primary/90"
                 data-testid="start-import-btn"
               >
                 {importing ? (

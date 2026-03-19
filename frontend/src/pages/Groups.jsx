@@ -208,7 +208,7 @@ const Groups = () => {
             Verwalten Sie Benutzergruppen für die Artikel-Sichtbarkeit
           </p>
         </div>
-        <Button onClick={() => setCreateDialog(true)} className="bg-red-500 hover:bg-red-600">
+        <Button onClick={() => setCreateDialog(true)} className="bg-primary hover:bg-primary/90">
           <Plus className="w-4 h-4 mr-2" />
           Neue Gruppe
         </Button>
@@ -318,7 +318,7 @@ const Groups = () => {
             <Button variant="outline" onClick={() => setCreateDialog(false)}>
               Abbrechen
             </Button>
-            <Button onClick={handleCreateGroup} disabled={saving} className="bg-red-500 hover:bg-red-600">
+            <Button onClick={handleCreateGroup} disabled={saving} className="bg-primary hover:bg-primary/90">
               {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
               Erstellen
             </Button>

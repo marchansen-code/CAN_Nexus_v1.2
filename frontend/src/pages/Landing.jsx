@@ -28,7 +28,7 @@ const Landing = () => {
                 }}
               />
               <div className="hidden items-center gap-2">
-                <div className="w-10 h-10 rounded-lg bg-canusa-red flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
                   <span className="text-white font-bold text-lg">C</span>
                 </div>
                 <span className="font-bold text-xl text-canusa-dark-blue">CANUSA</span>
@@ -37,7 +37,7 @@ const Landing = () => {
             </div>
             <Button 
               onClick={handleLogin} 
-              className="bg-canusa-red hover:bg-red-600" 
+              className="bg-primary hover:bg-primary/90" 
               data-testid="login-btn"
             >
               Mit Google anmelden
@@ -53,7 +53,7 @@ const Landing = () => {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-canusa-dark-blue mb-6">
               CANUSA Nexus
             </h1>
-            <p className="text-2xl font-medium text-canusa-red mb-4">
+            <p className="text-2xl font-medium text-primary mb-4">
               The Knowledge Hub
             </p>
             <p className="text-xl text-muted-foreground mb-8">
@@ -68,7 +68,7 @@ const Landing = () => {
             <Button 
               size="lg" 
               onClick={handleLogin}
-              className="bg-canusa-red hover:bg-red-600 h-14 px-10 text-lg"
+              className="bg-primary hover:bg-primary/90 h-14 px-10 text-lg"
               data-testid="hero-login-btn"
             >
               Anmelden

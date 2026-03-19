@@ -423,7 +423,7 @@ const ArticleView = () => {
           {canEdit && (
             <Button 
               onClick={() => navigate(`/articles/${id}/edit`)} 
-              className="bg-canusa-red hover:bg-red-600"
+              className="bg-primary hover:bg-primary/90"
               data-testid="edit-btn"
             >
               <Edit className="w-4 h-4 mr-1.5" />
