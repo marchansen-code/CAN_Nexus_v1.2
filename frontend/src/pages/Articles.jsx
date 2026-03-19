@@ -4,6 +4,17 @@ import axios from "axios";
 import { API, AuthContext } from "@/App";
 import { toast } from "sonner";
 import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  useDraggable,
+} from "@dnd-kit/core";
+import {
   Plus,
   Search,
   FileText,
@@ -18,7 +29,10 @@ import {
   TrendingUp,
   Folder,
   FolderOpen,
-  ArrowUpDown
+  ArrowUpDown,
+  MoveRight,
+  GripVertical,
+  Check
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +64,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 const StatusBadge = ({ status }) => {
   const styles = {
@@ -71,25 +94,32 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// Category Tree Item
-const CategoryItem = ({ category, categories, selectedCategoryId, onSelect, expandedCategories, toggleExpand }) => {
+// Droppable Category Component for Drag & Drop
+const DroppableCategoryItem = ({ category, categories, selectedCategoryId, onSelect, expandedCategories, toggleExpand }) => {
   const childCategories = categories.filter(c => c.parent_id === category.category_id);
   const hasChildren = childCategories.length > 0;
   const isExpanded = expandedCategories.has(category.category_id);
   const isSelected = selectedCategoryId === category.category_id;
 
+  const { setNodeRef, isOver } = useDroppable({
+    id: `category-${category.category_id}`,
+    data: { type: 'category', categoryId: category.category_id }
+  });
+
   return (
-    <div>
+    <div ref={setNodeRef}>
       <button
         onClick={() => {
           onSelect(category.category_id);
           if (hasChildren) toggleExpand(category.category_id);
         }}
-        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
+        className={cn(
+          "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left",
           isSelected 
             ? 'bg-red-50 text-red-700 font-medium' 
-            : 'hover:bg-muted text-foreground'
-        }`}
+            : 'hover:bg-muted text-foreground',
+          isOver && 'bg-indigo-100 dark:bg-indigo-800/30 ring-2 ring-indigo-500'
+        )}
       >
         {hasChildren ? (
           isExpanded ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />
@@ -107,7 +137,7 @@ const CategoryItem = ({ category, categories, selectedCategoryId, onSelect, expa
       {isExpanded && hasChildren && (
         <div className="ml-4 mt-1 border-l border-slate-200 pl-2">
           {childCategories.map(child => (
-            <CategoryItem
+            <DroppableCategoryItem
               key={child.category_id}
               category={child}
               categories={categories}
@@ -115,6 +145,88 @@ const CategoryItem = ({ category, categories, selectedCategoryId, onSelect, expa
               onSelect={onSelect}
               expandedCategories={expandedCategories}
               toggleExpand={toggleExpand}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Draggable Article Component
+const DraggableArticle = ({ article, children }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `article-${article.article_id}`,
+    data: { type: 'article', article }
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: isDragging ? 1000 : undefined,
+    opacity: isDragging ? 0.5 : 1,
+  } : undefined;
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <div {...listeners} className="cursor-grab active:cursor-grabbing">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// Move Dialog Category Tree Item
+const MoveCategoryItem = ({ category, categories, selectedCategoryId, onSelect, expandedCategories, toggleExpand, level = 0 }) => {
+  const childCategories = categories.filter(c => c.parent_id === category.category_id);
+  const hasChildren = childCategories.length > 0;
+  const isExpanded = expandedCategories.has(category.category_id);
+  const isSelected = selectedCategoryId === category.category_id;
+
+  return (
+    <div style={{ marginLeft: level > 0 ? `${level * 16}px` : 0 }}>
+      <button
+        onClick={() => {
+          onSelect(category.category_id);
+          if (hasChildren && !isExpanded) toggleExpand(category.category_id);
+        }}
+        className={cn(
+          "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left",
+          isSelected 
+            ? 'bg-indigo-50 text-indigo-700 font-medium' 
+            : 'hover:bg-muted text-foreground'
+        )}
+      >
+        {hasChildren ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleExpand(category.category_id); }}
+            className="p-0.5 hover:bg-muted rounded"
+          >
+            {isExpanded ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
+          </button>
+        ) : (
+          <span className="w-5" />
+        )}
+        {isExpanded ? (
+          <FolderOpen className="w-4 h-4 shrink-0 text-amber-500" />
+        ) : (
+          <Folder className="w-4 h-4 shrink-0 text-amber-500" />
+        )}
+        <span className="truncate flex-1">{category.name}</span>
+        {isSelected && <Check className="w-4 h-4 text-indigo-600 shrink-0" />}
+      </button>
+      
+      {isExpanded && hasChildren && (
+        <div className="mt-1 border-l border-slate-200 ml-2 pl-1">
+          {childCategories.map(child => (
+            <MoveCategoryItem
+              key={child.category_id}
+              category={child}
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              onSelect={onSelect}
+              expandedCategories={expandedCategories}
+              toggleExpand={toggleExpand}
+              level={level + 1}
             />
           ))}
         </div>
@@ -136,6 +248,25 @@ const Articles = () => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, article: null });
   const [sortBy, setSortBy] = useState("updated_at");
   const [sortOrder, setSortOrder] = useState("desc");
+  
+  // Move article dialog state
+  const [moveDialog, setMoveDialog] = useState({ open: false, article: null });
+  const [moveTargetCategoryId, setMoveTargetCategoryId] = useState(null);
+  const [movingArticle, setMovingArticle] = useState(false);
+  const [moveExpandedCategories, setMoveExpandedCategories] = useState(new Set());
+  
+  // Drag & Drop state
+  const [activeDragItem, setActiveDragItem] = useState(null);
+  
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
 
   const canEdit = user?.role === "admin" || user?.role === "editor";
 
@@ -174,6 +305,70 @@ const Articles = () => {
     } finally {
       setDeleteDialog({ open: false, article: null });
     }
+  };
+
+  // Move article to category
+  const handleMoveArticle = async (articleId, categoryId) => {
+    setMovingArticle(true);
+    try {
+      await axios.put(`${API}/articles/${articleId}`, {
+        category_ids: categoryId ? [categoryId] : []
+      });
+      toast.success("Artikel verschoben");
+      fetchData();
+      setMoveDialog({ open: false, article: null });
+      setMoveTargetCategoryId(null);
+    } catch (error) {
+      console.error("Failed to move article:", error);
+      toast.error("Artikel konnte nicht verschoben werden");
+    } finally {
+      setMovingArticle(false);
+    }
+  };
+
+  // Drag & Drop handlers
+  const handleDragStart = (event) => {
+    const { active } = event;
+    if (active.data.current?.type === 'article') {
+      setActiveDragItem(active.data.current.article);
+    }
+  };
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    setActiveDragItem(null);
+    
+    if (!over || !canEdit) return;
+    
+    // Check if we dropped on a category
+    if (over.data.current?.type === 'category') {
+      const targetCategoryId = over.data.current.categoryId;
+      
+      // If dragging an article
+      if (active.data.current?.type === 'article') {
+        const article = active.data.current.article;
+        const currentCategoryIds = article.category_ids || (article.category_id ? [article.category_id] : []);
+        
+        // Don't move if already in this category
+        if (currentCategoryIds.includes(targetCategoryId)) return;
+        
+        await handleMoveArticle(article.article_id, targetCategoryId);
+      }
+    }
+  };
+
+  const handleDragCancel = () => {
+    setActiveDragItem(null);
+  };
+
+  const toggleMoveExpand = (categoryId) => {
+    const newExpanded = new Set(moveExpandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setMoveExpandedCategories(newExpanded);
   };
 
   const toggleExpand = (categoryId) => {
@@ -255,6 +450,13 @@ const Articles = () => {
   }
 
   return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
     <div className="space-y-4 animate-fadeIn h-full max-w-full overflow-hidden" data-testid="articles-page">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -299,7 +501,7 @@ const Articles = () => {
               </button>
               <Separator className="my-2" />
               {rootCategories.map(cat => (
-                <CategoryItem
+                <DroppableCategoryItem
                   key={cat.category_id}
                   category={cat}
                   categories={categories}
@@ -404,13 +606,16 @@ const Articles = () => {
             {sortedArticles.length > 0 ? (
               <div className="space-y-3 pr-2">
                 {sortedArticles.map((article) => (
+                  <DraggableArticle key={article.article_id} article={article}>
                   <Card
-                    key={article.article_id}
                     className="hover:shadow-md transition-all duration-200"
                     data-testid={`article-card-${article.article_id}`}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between gap-4">
+                        {canEdit && (
+                          <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                        )}
                         <div 
                           className="flex-1 cursor-pointer min-w-0"
                           onClick={() => navigate(`/articles/${article.article_id}`)}
@@ -450,6 +655,13 @@ const Articles = () => {
                                 <Edit className="w-4 h-4 mr-2" />
                                 Bearbeiten
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                setMoveDialog({ open: true, article });
+                                setMoveTargetCategoryId(article.category_id || null);
+                              }}>
+                                <MoveRight className="w-4 h-4 mr-2" />
+                                Verschieben
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 className="text-red-600"
@@ -464,6 +676,7 @@ const Articles = () => {
                       </div>
                     </CardContent>
                   </Card>
+                  </DraggableArticle>
                 ))}
               </div>
             ) : (
@@ -507,7 +720,79 @@ const Articles = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Move Article Dialog */}
+      <Dialog open={moveDialog.open} onOpenChange={(open) => !open && setMoveDialog({ open: false, article: null })}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MoveRight className="w-5 h-5" />
+              Artikel verschieben
+            </DialogTitle>
+            <DialogDescription>
+              Wählen Sie die Zielkategorie für "{moveDialog.article?.title}"
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="border rounded-lg p-3 max-h-[300px] overflow-y-auto">
+            {/* Option for no category */}
+            <button
+              onClick={() => setMoveTargetCategoryId(null)}
+              className={cn(
+                "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left mb-1",
+                moveTargetCategoryId === null
+                  ? 'bg-indigo-50 text-indigo-700 font-medium'
+                  : 'hover:bg-muted text-foreground'
+              )}
+            >
+              {moveTargetCategoryId === null && <Check className="w-4 h-4" />}
+              <span className={moveTargetCategoryId !== null ? "ml-6" : ""}>Keine (Root-Kategorie)</span>
+            </button>
+            
+            <Separator className="my-2" />
+            
+            {/* Category tree for move dialog */}
+            {rootCategories.map(cat => (
+              <MoveCategoryItem
+                key={cat.category_id}
+                category={cat}
+                categories={categories}
+                selectedCategoryId={moveTargetCategoryId}
+                onSelect={setMoveTargetCategoryId}
+                expandedCategories={moveExpandedCategories}
+                toggleExpand={toggleMoveExpand}
+              />
+            ))}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoveDialog({ open: false, article: null })}>
+              Abbrechen
+            </Button>
+            <Button 
+              onClick={() => handleMoveArticle(moveDialog.article?.article_id, moveTargetCategoryId)}
+              disabled={movingArticle}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              {movingArticle ? "Verschiebe..." : "Verschieben"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+    
+    {/* Drag Overlay */}
+    <DragOverlay>
+      {activeDragItem && (
+        <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border-2 border-indigo-500 shadow-lg flex items-center gap-3 min-w-[200px]">
+          <FileText className="w-5 h-5 text-indigo-500" />
+          <span className="text-sm font-medium truncate max-w-[200px]">
+            {activeDragItem.title}
+          </span>
+        </div>
+      )}
+    </DragOverlay>
+    </DndContext>
   );
 };
 

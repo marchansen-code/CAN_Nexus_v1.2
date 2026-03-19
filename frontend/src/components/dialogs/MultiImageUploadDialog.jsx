@@ -16,15 +16,69 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Upload, X, Image as ImageIcon, Loader2, Check, AlertCircle, FolderOpen, FolderPlus, ChevronRight } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Upload, X, Image as ImageIcon, Loader2, Check, AlertCircle, FolderOpen, FolderPlus, ChevronRight, ChevronDown, Folder } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Folder Tree Item for hierarchical selection
+const FolderTreeItem = ({ folder, folders, selectedId, onSelect, expandedIds, toggleExpand, level = 0 }) => {
+  const childFolders = folders.filter(f => f.parent_id === folder.folder_id);
+  const hasChildren = childFolders.length > 0;
+  const isExpanded = expandedIds.has(folder.folder_id);
+  const isSelected = selectedId === folder.folder_id;
+
+  return (
+    <div style={{ marginLeft: level > 0 ? `${level * 12}px` : 0 }}>
+      <button
+        onClick={() => {
+          onSelect(folder.folder_id);
+          if (hasChildren && !isExpanded) toggleExpand(folder.folder_id);
+        }}
+        className={cn(
+          "w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors text-left",
+          isSelected 
+            ? 'bg-indigo-50 text-indigo-700 font-medium' 
+            : 'hover:bg-muted text-foreground'
+        )}
+      >
+        {hasChildren ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleExpand(folder.folder_id); }}
+            className="p-0.5 hover:bg-muted rounded"
+          >
+            {isExpanded ? <ChevronDown className="w-3.5 h-3.5 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
+          </button>
+        ) : (
+          <span className="w-4" />
+        )}
+        {isExpanded ? (
+          <FolderOpen className="w-4 h-4 shrink-0 text-amber-500" />
+        ) : (
+          <Folder className="w-4 h-4 shrink-0 text-amber-500" />
+        )}
+        <span className="truncate flex-1">{folder.name}</span>
+        {isSelected && <Check className="w-4 h-4 text-indigo-600 shrink-0" />}
+      </button>
+      
+      {isExpanded && hasChildren && (
+        <div className="mt-0.5 border-l border-slate-200 ml-2 pl-1">
+          {childFolders.map(child => (
+            <FolderTreeItem
+              key={child.folder_id}
+              folder={child}
+              folders={folders}
+              selectedId={selectedId}
+              onSelect={onSelect}
+              expandedIds={expandedIds}
+              toggleExpand={toggleExpand}
+              level={level + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const MultiImageUploadDialog = ({ open, onClose, onImagesUploaded }) => {
   const [files, setFiles] = useState([]);
@@ -38,6 +92,7 @@ const MultiImageUploadDialog = ({ open, onClose, onImagesUploaded }) => {
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [creatingFolder, setCreatingFolder] = useState(false);
+  const [expandedFolderIds, setExpandedFolderIds] = useState(new Set());
   const fileInputRef = useRef(null);
   const dropZoneRef = useRef(null);
 
@@ -54,6 +109,18 @@ const MultiImageUploadDialog = ({ open, onClose, onImagesUploaded }) => {
     } catch (error) {
       console.error("Failed to load folders:", error);
     }
+  };
+
+  const toggleFolderExpand = (folderId) => {
+    setExpandedFolderIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId);
+      } else {
+        newSet.add(folderId);
+      }
+      return newSet;
+    });
   };
 
   const createNewFolder = async () => {
@@ -348,42 +415,57 @@ const MultiImageUploadDialog = ({ open, onClose, onImagesUploaded }) => {
 
             {saveToDocuments && !results && (
               <div className="space-y-2 pl-6">
-                <Label className="text-sm text-muted-foreground">Zielordner:</Label>
-                <div className="flex gap-2">
-                  <Select
-                    value={selectedFolderId}
-                    onValueChange={setSelectedFolderId}
-                    disabled={uploading}
-                  >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Ordner auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="auto">
-                        <span className="flex items-center gap-2">
-                          <FolderOpen className="w-4 h-4 text-amber-500" />
-                          Bilder (automatisch)
-                        </span>
-                      </SelectItem>
-                      {folders.map(folder => (
-                        <SelectItem key={folder.folder_id} value={folder.folder_id}>
-                          <span className="flex items-center gap-2">
-                            <FolderOpen className="w-4 h-4 text-amber-500" />
-                            {folder.name}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-muted-foreground">Zielordner:</Label>
                   <Button
-                    variant="outline"
-                    size="icon"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowNewFolderInput(!showNewFolderInput)}
                     disabled={uploading}
-                    title="Neuen Ordner erstellen"
+                    className="text-xs h-7"
                   >
-                    <FolderPlus className="w-4 h-4" />
+                    <FolderPlus className="w-3.5 h-3.5 mr-1" />
+                    Neuer Ordner
                   </Button>
+                </div>
+                
+                {/* Hierarchical folder tree */}
+                <div className="border rounded-lg p-2 max-h-[180px] overflow-y-auto bg-muted/30">
+                  {/* Auto option */}
+                  <button
+                    onClick={() => setSelectedFolderId("auto")}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors text-left",
+                      selectedFolderId === "auto"
+                        ? 'bg-indigo-50 text-indigo-700 font-medium'
+                        : 'hover:bg-muted text-foreground'
+                    )}
+                  >
+                    <FolderOpen className="w-4 h-4 text-amber-500" />
+                    <span className="flex-1">Bilder (automatisch)</span>
+                    {selectedFolderId === "auto" && <Check className="w-4 h-4 text-indigo-600" />}
+                  </button>
+                  
+                  <Separator className="my-1.5" />
+                  
+                  {/* Folder tree */}
+                  {folders.filter(f => !f.parent_id).map(folder => (
+                    <FolderTreeItem
+                      key={folder.folder_id}
+                      folder={folder}
+                      folders={folders}
+                      selectedId={selectedFolderId}
+                      onSelect={setSelectedFolderId}
+                      expandedIds={expandedFolderIds}
+                      toggleExpand={toggleFolderExpand}
+                    />
+                  ))}
+                  
+                  {folders.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">
+                      Keine Ordner vorhanden
+                    </p>
+                  )}
                 </div>
 
                 {showNewFolderInput && (
