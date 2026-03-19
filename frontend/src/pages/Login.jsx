@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Lock, Mail, BookOpen, Search, FileText } from "lucide-react";
+import { Loader2, Lock, Mail } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -40,7 +40,6 @@ const Login = () => {
       try {
         const response = await axios.get(`${API}/auth/me`);
         if (response.data && response.data.user_id) {
-          // User is already logged in, redirect to dashboard
           navigate("/dashboard", { replace: true });
         }
       } catch (error) {
@@ -82,102 +81,62 @@ const Login = () => {
 
   const handleGoogleLogin = () => {
     setGoogleLoading(true);
-    // Redirect to Google OAuth login endpoint
     window.location.href = `${API}/auth/google/login`;
   };
 
   // Show loading while checking existing session
   if (checkingSession) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{
+        backgroundImage: 'url(/login-bg.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}>
+        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex flex-col">
-      {/* Subtle Background Pattern */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -left-40 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 right-1/4 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-      </div>
-
-      {/* Header */}
-      <header className="relative z-10 p-6">
-        <div className="max-w-7xl mx-auto">
-          <img 
-            src="/nexus-logo.png" 
-            alt="CANUSA Nexus - The Knowledge Hub" 
-            className="h-16 object-contain"
-          />
-        </div>
-      </header>
+    <div 
+      className="min-h-screen flex flex-col"
+      style={{
+        backgroundImage: 'url(/login-bg.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }}
+    >
+      {/* Overlay for better readability */}
+      <div className="absolute inset-0 bg-black/20" />
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-5xl grid lg:grid-cols-2 gap-12 items-center">
+        <div className="w-full max-w-4xl grid lg:grid-cols-2 gap-6 items-stretch">
           
-          {/* Left Side - Branding & Features */}
-          <div className="hidden lg:block space-y-8">
-            <div>
-              <img 
-                src="/nexus-logo.png" 
-                alt="CANUSA Nexus" 
-                className="h-48 object-contain mb-8"
-              />
-              <p className="text-lg text-slate-600">
-                Ihre zentrale Wissensplattform für schnellen Zugriff auf alle wichtigen Informationen.
-              </p>
-            </div>
-
-            {/* Feature Cards */}
-            <div className="grid gap-4">
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white shadow-sm border border-slate-100">
-                <div className="p-2.5 rounded-lg bg-primary/10">
-                  <Search className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-800">Schnelle Suche</h3>
-                  <p className="text-sm text-slate-500">Finden Sie Artikel in Sekundenschnelle mit der Live-Suche</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white shadow-sm border border-slate-100">
-                <div className="p-2.5 rounded-lg bg-blue-500/10">
-                  <BookOpen className="w-5 h-5 text-blue-500" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-800">Wissensartikel</h3>
-                  <p className="text-sm text-slate-500">Strukturierte Artikel mit Kategorien und Tags</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white shadow-sm border border-slate-100">
-                <div className="p-2.5 rounded-lg bg-emerald-500/10">
-                  <FileText className="w-5 h-5 text-emerald-500" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-800">PDF-Import</h3>
-                  <p className="text-sm text-slate-500">Importieren Sie PDFs und wandeln Sie sie in Artikel um</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Left Side - Logo & Slogan Card */}
+          <Card className="hidden lg:flex flex-col items-center justify-center border shadow-2xl bg-white/95 backdrop-blur-sm p-8">
+            <img 
+              src="/nexus-logo.png" 
+              alt="CANUSA Nexus" 
+              className="h-48 object-contain mb-8"
+            />
+            <p className="text-lg text-slate-600 text-center max-w-sm">
+              Deine zentrale Wissensplattform für schnellen Zugriff auf alle wichtigen Informationen.
+            </p>
+          </Card>
 
           {/* Right Side - Login Form */}
-          <div className="w-full max-w-md mx-auto">
-            {/* Mobile Logo */}
-            <div className="lg:hidden flex justify-center mb-8">
-              <img 
-                src="/nexus-logo.png" 
-                alt="CANUSA Nexus" 
-                className="h-24 object-contain"
-              />
+          <div className="w-full">
+            {/* Mobile Logo - Text only */}
+            <div className="lg:hidden flex justify-center mb-6">
+              <span className="text-2xl font-bold">
+                <span className="text-red-600">CANUSA</span>
+                <span className="text-slate-700 ml-2">Nexus</span>
+              </span>
             </div>
             
-            <Card className="border shadow-xl bg-white">
+            <Card className="border shadow-2xl bg-white/95 backdrop-blur-sm">
               <CardHeader className="space-y-1 pb-6">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
@@ -199,7 +158,7 @@ const Login = () => {
                         id="email"
                         type="email"
                         placeholder="name@canusa.de"
-                        className="pl-10 h-11 border-slate-200 focus:border-primary"
+                        className="pl-10 h-11 border-slate-200 focus:border-primary bg-white"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         data-testid="email-input"
@@ -215,7 +174,7 @@ const Login = () => {
                         id="password"
                         type="password"
                         placeholder="••••••••"
-                        className="pl-10 h-11 border-slate-200 focus:border-primary"
+                        className="pl-10 h-11 border-slate-200 focus:border-primary bg-white"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         data-testid="password-input"
@@ -270,7 +229,7 @@ const Login = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-11 border-slate-200 hover:bg-slate-50 transition-colors"
+                  className="w-full h-11 border-slate-200 hover:bg-slate-50 transition-colors bg-white"
                   onClick={handleGoogleLogin}
                   disabled={googleLoading}
                   data-testid="google-login-button"
@@ -317,8 +276,8 @@ const Login = () => {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 py-6 text-center">
-        <p className="text-sm text-slate-400">
+      <footer className="relative z-10 py-4 text-center">
+        <p className="text-sm text-white/80 drop-shadow-lg">
           CANUSA Touristik GmbH & Co. KG
         </p>
       </footer>
