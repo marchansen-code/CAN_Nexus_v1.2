@@ -117,7 +117,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -139,7 +139,7 @@ const Dashboard = () => {
             <Upload className="w-4 h-4 mr-2" />
             PDF hochladen
           </Button>
-          <Button onClick={() => navigate("/articles/new")} className="bg-canusa-red hover:bg-red-600" data-testid="new-article-btn">
+          <Button onClick={() => navigate("/articles/new")} className="bg-primary hover:bg-primary/90" data-testid="new-article-btn">
             <Plus className="w-4 h-4 mr-2" />
             Neuer Artikel
           </Button>
@@ -152,7 +152,7 @@ const Dashboard = () => {
           title="Artikel gesamt"
           value={stats?.total_articles || 0}
           icon={FileText}
-          color="bg-red-100 text-red-600"
+          color="bg-primary/10 text-primary"
         />
         <StatCard
           title="Veröffentlicht"
@@ -187,7 +187,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-6">
             <Avatar className="w-16 h-16">
               <AvatarImage src={user?.picture} alt={user?.name} />
-              <AvatarFallback className="bg-red-100 text-red-700 text-xl">
+              <AvatarFallback className="bg-primary/10 text-primary text-xl">
                 {user?.name?.split(" ").map(n => n[0]).join("").slice(0, 2)}
               </AvatarFallback>
             </Avatar>
@@ -316,7 +316,7 @@ const Dashboard = () => {
               onClick={() => navigate("/search")}
               data-testid="quick-search-btn"
             >
-              <Search className="w-5 h-5 mr-3 text-red-500" />
+              <Search className="w-5 h-5 mr-3 text-primary" />
               <div className="text-left">
                 <p className="font-medium">KI-Suche</p>
                 <p className="text-xs text-muted-foreground">Fragen an die Wissensdatenbank</p>
@@ -354,7 +354,7 @@ const Dashboard = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-canusa-red" />
+            <TrendingUp className="w-5 h-5 text-primary" />
             Beliebteste Artikel
           </CardTitle>
         </CardHeader>
@@ -367,7 +367,7 @@ const Dashboard = () => {
                   className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => navigate(`/articles/${article.article_id}`)}
                 >
-                  <span className="shrink-0 w-8 h-8 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold text-sm">
+                  <span className="shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
                     {index + 1}
                   </span>
                   <div className="min-w-0 flex-1">

@@ -90,7 +90,7 @@ const Login = () => {
   if (checkingSession) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -99,15 +99,15 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       {/* Animated Background Pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute top-1/2 -left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute -bottom-40 right-1/3 w-72 h-72 bg-red-500/10 rounded-full blur-3xl animate-pulse delay-500" />
+        <div className="absolute -bottom-40 right-1/3 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse delay-500" />
       </div>
 
       {/* Header */}
       <header className="relative z-10 p-6">
         <div className="max-w-7xl mx-auto flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/20">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
             <span className="text-white font-bold text-lg">C</span>
           </div>
           <div>
@@ -135,8 +135,8 @@ const Login = () => {
             {/* Feature Cards */}
             <div className="grid gap-4">
               <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
-                <div className="p-2 rounded-lg bg-red-500/20">
-                  <Search className="w-5 h-5 text-red-400" />
+                <div className="p-2 rounded-lg bg-primary/20">
+                  <Search className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white">Schnelle Suche</h3>
@@ -237,7 +237,7 @@ const Login = () => {
 
                   <Button 
                     type="submit" 
-                    className="w-full h-11 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium shadow-lg shadow-red-500/25 transition-all hover:shadow-red-500/40"
+                    className="w-full h-11 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium shadow-lg shadow-primary/25 transition-all hover:shadow-primary/40"
                     disabled={loading}
                     data-testid="login-submit"
                   >

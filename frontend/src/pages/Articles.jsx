@@ -116,7 +116,7 @@ const DroppableCategoryItem = ({ category, categories, selectedCategoryId, onSel
         className={cn(
           "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left",
           isSelected 
-            ? 'bg-red-50 text-red-700 font-medium' 
+            ? 'bg-primary/10 text-primary font-medium' 
             : 'hover:bg-muted text-foreground',
           isOver && 'bg-indigo-100 dark:bg-indigo-800/30 ring-2 ring-indigo-500'
         )}
@@ -477,7 +477,7 @@ const Articles = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -500,7 +500,7 @@ const Articles = () => {
         {canEdit && (
           <Button 
             onClick={() => navigate("/articles/new")} 
-            className="bg-canusa-red hover:bg-red-600"
+            className="bg-primary hover:bg-primary/90"
             data-testid="create-article-btn"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -525,7 +525,7 @@ const Articles = () => {
                 onClick={() => setSelectedCategoryId(null)}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
                   selectedCategoryId === null 
-                    ? 'bg-red-50 text-red-700 font-medium' 
+                    ? 'bg-primary/10 text-primary font-medium' 
                     : 'hover:bg-muted text-foreground'
                 }`}
               >

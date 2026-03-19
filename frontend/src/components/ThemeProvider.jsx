@@ -2,29 +2,104 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import axios from 'axios';
 import { API } from '@/App';
 
+// Color presets with full HSL values for all CSS variables
+const COLOR_PRESETS = {
+  'canusa': {
+    name: 'CANUSA Standard',
+    light: {
+      primary: '0 84% 50%',
+      ring: '0 84% 50%',
+      accent: '0 84% 96%',
+      'accent-foreground': '0 84% 35%',
+    },
+    dark: {
+      primary: '0 84% 55%',
+      ring: '0 84% 55%',
+      accent: '0 40% 15%',
+      'accent-foreground': '0 84% 85%',
+    }
+  },
+  'ocean': {
+    name: 'Ozean Blau',
+    light: {
+      primary: '200 80% 45%',
+      ring: '200 80% 45%',
+      accent: '200 80% 96%',
+      'accent-foreground': '200 80% 30%',
+    },
+    dark: {
+      primary: '200 80% 55%',
+      ring: '200 80% 55%',
+      accent: '200 40% 15%',
+      'accent-foreground': '200 80% 85%',
+    }
+  },
+  'forest': {
+    name: 'Wald Grün',
+    light: {
+      primary: '145 60% 40%',
+      ring: '145 60% 40%',
+      accent: '145 60% 95%',
+      'accent-foreground': '145 60% 25%',
+    },
+    dark: {
+      primary: '145 60% 50%',
+      ring: '145 60% 50%',
+      accent: '145 30% 15%',
+      'accent-foreground': '145 60% 80%',
+    }
+  },
+  'sunset': {
+    name: 'Sonnenuntergang',
+    light: {
+      primary: '30 95% 50%',
+      ring: '30 95% 50%',
+      accent: '30 95% 95%',
+      'accent-foreground': '30 95% 30%',
+    },
+    dark: {
+      primary: '30 95% 55%',
+      ring: '30 95% 55%',
+      accent: '30 50% 15%',
+      'accent-foreground': '30 95% 85%',
+    }
+  },
+  'lavender': {
+    name: 'Lavendel',
+    light: {
+      primary: '270 60% 55%',
+      ring: '270 60% 55%',
+      accent: '270 60% 96%',
+      'accent-foreground': '270 60% 35%',
+    },
+    dark: {
+      primary: '270 60% 65%',
+      ring: '270 60% 65%',
+      accent: '270 30% 15%',
+      'accent-foreground': '270 60% 85%',
+    }
+  },
+  'midnight': {
+    name: 'Mitternacht',
+    light: {
+      primary: '220 70% 45%',
+      ring: '220 70% 45%',
+      accent: '220 70% 96%',
+      'accent-foreground': '220 70% 30%',
+    },
+    dark: {
+      primary: '220 70% 55%',
+      ring: '220 70% 55%',
+      accent: '220 40% 15%',
+      'accent-foreground': '220 70% 85%',
+    }
+  }
+};
+
 // Default theme settings
 const defaultThemeSettings = {
-  mode: 'light', // 'light', 'dark', 'system'
-  colors: {
-    primary: '0 84% 50%',      // CANUSA Red
-    secondary: '210 30% 95%',
-    accent: '210 30% 96%',
-    background: '0 0% 98%',
-    foreground: '210 50% 15%',
-    card: '0 0% 100%',
-    muted: '210 30% 96%',
-    border: '210 25% 90%',
-  },
-  darkColors: {
-    primary: '0 84% 55%',
-    secondary: '217 33% 17%',
-    accent: '217 33% 17%',
-    background: '222 47% 8%',
-    foreground: '210 20% 98%',
-    card: '222 47% 11%',
-    muted: '217 33% 17%',
-    border: '217 33% 25%',
-  }
+  mode: 'light',
+  colorScheme: 'canusa'
 };
 
 const ThemeContext = createContext({
@@ -32,10 +107,12 @@ const ThemeContext = createContext({
   setTheme: () => {},
   resolvedTheme: 'light',
   themeSettings: defaultThemeSettings,
-  updateThemeSettings: () => {},
+  colorScheme: 'canusa',
+  setColorScheme: () => {},
   resetThemeSettings: () => {},
   saveThemeToServer: () => {},
   loadThemeFromServer: () => {},
+  COLOR_PRESETS
 });
 
 export const useTheme = () => useContext(ThemeContext);
@@ -54,30 +131,26 @@ export const ThemeProvider = ({ children }) => {
   });
   
   const [resolvedTheme, setResolvedTheme] = useState('light');
-  const [themeSettings, setThemeSettings] = useState(() => {
+  const [colorScheme, setColorSchemeState] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('themeSettings');
-      if (saved) {
-        try {
-          return { ...defaultThemeSettings, ...JSON.parse(saved) };
-        } catch (e) {
-          return defaultThemeSettings;
-        }
-      }
+      return localStorage.getItem('colorScheme') || 'canusa';
     }
-    return defaultThemeSettings;
+    return 'canusa';
   });
 
-  // Apply CSS variables based on theme settings
-  const applyCssVariables = useCallback((settings, isDark) => {
+  // Apply CSS variables based on color scheme
+  const applyCssVariables = useCallback((scheme, isDark) => {
     const root = document.documentElement;
-    const colors = isDark ? settings.darkColors : settings.colors;
+    const preset = COLOR_PRESETS[scheme] || COLOR_PRESETS['canusa'];
+    const colors = isDark ? preset.dark : preset.light;
     
-    if (colors) {
-      Object.entries(colors).forEach(([key, value]) => {
-        root.style.setProperty(`--${key}`, value);
-      });
-    }
+    // Apply all color variables
+    Object.entries(colors).forEach(([key, value]) => {
+      root.style.setProperty(`--${key}`, value);
+    });
+    
+    // Also update chart colors to match the theme
+    root.style.setProperty('--chart-1', colors.primary);
   }, []);
 
   useEffect(() => {
@@ -98,8 +171,8 @@ export const ThemeProvider = ({ children }) => {
         root.classList.remove('dark');
       }
       
-      // Apply custom CSS variables
-      applyCssVariables(themeSettings, effectiveTheme === 'dark');
+      // Apply color scheme CSS variables
+      applyCssVariables(colorScheme, effectiveTheme === 'dark');
     };
 
     updateTheme();
@@ -113,46 +186,30 @@ export const ThemeProvider = ({ children }) => {
     
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme, themeSettings, applyCssVariables]);
+  }, [theme, colorScheme, applyCssVariables]);
 
   const setTheme = (newTheme) => {
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
-    
-    // Also update themeSettings.mode
-    setThemeSettings(prev => {
-      const updated = { ...prev, mode: newTheme };
-      localStorage.setItem('themeSettings', JSON.stringify(updated));
-      return updated;
-    });
   };
 
-  const updateThemeSettings = (newSettings) => {
-    setThemeSettings(prev => {
-      const updated = { ...prev, ...newSettings };
-      localStorage.setItem('themeSettings', JSON.stringify(updated));
-      
-      // If mode changed, update theme too
-      if (newSettings.mode && newSettings.mode !== theme) {
-        setThemeState(newSettings.mode);
-        localStorage.setItem('theme', newSettings.mode);
-      }
-      
-      return updated;
-    });
+  const setColorScheme = (newScheme) => {
+    setColorSchemeState(newScheme);
+    localStorage.setItem('colorScheme', newScheme);
+    
+    // Apply immediately
+    const isDark = resolvedTheme === 'dark';
+    applyCssVariables(newScheme, isDark);
   };
 
   const resetThemeSettings = () => {
-    setThemeSettings(defaultThemeSettings);
     setThemeState('light');
+    setColorSchemeState('canusa');
     localStorage.setItem('theme', 'light');
-    localStorage.setItem('themeSettings', JSON.stringify(defaultThemeSettings));
+    localStorage.setItem('colorScheme', 'canusa');
     
     // Reset CSS variables
-    const root = document.documentElement;
-    Object.entries(defaultThemeSettings.colors).forEach(([key, value]) => {
-      root.style.setProperty(`--${key}`, value);
-    });
+    applyCssVariables('canusa', false);
   };
 
   // Save theme settings to server (for user profile)
@@ -161,7 +218,7 @@ export const ThemeProvider = ({ children }) => {
       await axios.put(`${API}/users/me/theme`, {
         theme_settings: {
           mode: theme,
-          ...themeSettings
+          colorScheme: colorScheme
         }
       });
       return true;
@@ -183,11 +240,9 @@ export const ThemeProvider = ({ children }) => {
           setTheme(serverSettings.mode);
         }
         
-        setThemeSettings(prev => {
-          const updated = { ...prev, ...serverSettings };
-          localStorage.setItem('themeSettings', JSON.stringify(updated));
-          return updated;
-        });
+        if (serverSettings.colorScheme) {
+          setColorScheme(serverSettings.colorScheme);
+        }
         
         return true;
       }
@@ -197,17 +252,23 @@ export const ThemeProvider = ({ children }) => {
     return false;
   };
 
+  const themeSettings = {
+    mode: theme,
+    colorScheme: colorScheme
+  };
+
   return (
     <ThemeContext.Provider value={{ 
       theme, 
       setTheme, 
       resolvedTheme, 
       themeSettings,
-      updateThemeSettings,
+      colorScheme,
+      setColorScheme,
       resetThemeSettings,
       saveThemeToServer,
       loadThemeFromServer,
-      defaultThemeSettings
+      COLOR_PRESETS
     }}>
       {children}
     </ThemeContext.Provider>

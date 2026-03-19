@@ -80,7 +80,7 @@ const Sidebar = ({ className = "", onNavigate, userRole }) => {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? "bg-red-50 text-red-700 border-l-2 border-red-500 -ml-[2px]"
+                  ? "bg-primary/10 text-primary border-l-2 border-primary -ml-[2px]"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`
             }
@@ -155,7 +155,7 @@ const Header = () => {
 
         {/* Mobile Logo */}
         <div className="lg:hidden flex items-center gap-2">
-          <span className="font-bold text-red-600">CANUSA</span>
+          <span className="font-bold text-primary">CANUSA</span>
           <span className="text-sm text-muted-foreground">Nexus</span>
         </div>
 

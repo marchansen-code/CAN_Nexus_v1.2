@@ -8,50 +8,13 @@ import {
   Palette,
   RotateCcw,
   Save,
-  Check,
-  ChevronLeft,
-  Paintbrush
+  Check
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-
-// Predefined color presets
-const COLOR_PRESETS = [
-  {
-    name: "CANUSA Standard",
-    primary: "0 84% 50%",
-    description: "Das klassische CANUSA Rot"
-  },
-  {
-    name: "Ozean Blau",
-    primary: "200 80% 45%",
-    description: "Beruhigendes Blau"
-  },
-  {
-    name: "Wald Grün",
-    primary: "145 60% 40%",
-    description: "Natürliches Grün"
-  },
-  {
-    name: "Sonnenuntergang",
-    primary: "30 95% 50%",
-    description: "Warmes Orange"
-  },
-  {
-    name: "Lavendel",
-    primary: "270 60% 55%",
-    description: "Elegantes Violett"
-  },
-  {
-    name: "Mitternacht",
-    primary: "220 70% 45%",
-    description: "Tiefes Dunkelblau"
-  }
-];
 
 // HSL color picker helper
 const hslToHex = (h, s, l) => {
@@ -75,54 +38,32 @@ const ThemeSettings = () => {
   const { 
     theme, 
     setTheme, 
-    themeSettings, 
-    updateThemeSettings, 
+    colorScheme,
+    setColorScheme,
     resetThemeSettings,
     saveThemeToServer,
-    defaultThemeSettings
+    COLOR_PRESETS
   } = useTheme();
   
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState(null);
-  const [customPrimary, setCustomPrimary] = useState(
-    themeSettings?.colors?.primary || defaultThemeSettings.colors.primary
-  );
+  const [initialTheme] = useState(theme);
+  const [initialScheme] = useState(colorScheme);
 
   // Track changes
   useEffect(() => {
-    const currentPrimary = themeSettings?.colors?.primary || defaultThemeSettings.colors.primary;
-    setHasChanges(
-      theme !== (themeSettings?.mode || 'light') ||
-      currentPrimary !== defaultThemeSettings.colors.primary
-    );
-  }, [theme, themeSettings, defaultThemeSettings]);
+    setHasChanges(theme !== initialTheme || colorScheme !== initialScheme);
+  }, [theme, colorScheme, initialTheme, initialScheme]);
 
   const handleModeChange = (newMode) => {
     setTheme(newMode);
     setHasChanges(true);
   };
 
-  const handlePresetSelect = (preset) => {
-    setSelectedPreset(preset.name);
-    setCustomPrimary(preset.primary);
-    
-    // Update theme settings with new primary color
-    updateThemeSettings({
-      colors: {
-        ...themeSettings.colors,
-        primary: preset.primary
-      },
-      darkColors: {
-        ...themeSettings.darkColors,
-        primary: preset.primary
-      }
-    });
-    
-    // Apply CSS variable immediately
-    document.documentElement.style.setProperty('--primary', preset.primary);
+  const handlePresetSelect = (presetKey) => {
+    setColorScheme(presetKey);
     setHasChanges(true);
-    toast.success(`Farbschema "${preset.name}" angewendet`);
+    toast.success(`Farbschema "${COLOR_PRESETS[presetKey].name}" angewendet`);
   };
 
   const handleSave = async () => {
@@ -144,15 +85,27 @@ const ThemeSettings = () => {
 
   const handleReset = () => {
     resetThemeSettings();
-    setSelectedPreset("CANUSA Standard");
-    setCustomPrimary(defaultThemeSettings.colors.primary);
-    document.documentElement.style.setProperty('--primary', defaultThemeSettings.colors.primary);
     toast.success("Theme auf Standard zurückgesetzt");
     setHasChanges(false);
   };
 
-  const primaryHsl = parseHsl(customPrimary);
-  const primaryHex = hslToHex(primaryHsl.h, primaryHsl.s, primaryHsl.l);
+  // Get hex color for preview
+  const getPreviewColor = (presetKey) => {
+    const preset = COLOR_PRESETS[presetKey];
+    if (!preset) return '#e11d48';
+    const hsl = parseHsl(preset.light.primary);
+    return hslToHex(hsl.h, hsl.s, hsl.l);
+  };
+
+  // Get descriptions for presets
+  const presetDescriptions = {
+    'canusa': 'Das klassische CANUSA Rot',
+    'ocean': 'Beruhigendes Blau',
+    'forest': 'Natürliches Grün',
+    'sunset': 'Warmes Orange',
+    'lavender': 'Elegantes Violett',
+    'midnight': 'Tiefes Dunkelblau'
+  };
 
   return (
     <div className="space-y-6" data-testid="theme-settings">
@@ -220,27 +173,26 @@ const ThemeSettings = () => {
             Farbschema
           </CardTitle>
           <CardDescription>
-            Wählen Sie ein vordefiniertes Farbschema oder passen Sie die Farben an
+            Wählen Sie ein vordefiniertes Farbschema für die Benutzeroberfläche
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {COLOR_PRESETS.map((preset) => {
-              const presetHsl = parseHsl(preset.primary);
-              const presetHex = hslToHex(presetHsl.h, presetHsl.s, presetHsl.l);
-              const isSelected = selectedPreset === preset.name || 
-                (customPrimary === preset.primary && !selectedPreset);
+            {Object.entries(COLOR_PRESETS).map(([key, preset]) => {
+              const previewHex = getPreviewColor(key);
+              const isSelected = colorScheme === key;
               
               return (
                 <button
-                  key={preset.name}
-                  onClick={() => handlePresetSelect(preset)}
+                  key={key}
+                  onClick={() => handlePresetSelect(key)}
                   className={cn(
                     "relative flex flex-col items-start p-4 rounded-lg border-2 transition-all text-left hover:shadow-md",
                     isSelected 
                       ? "border-primary bg-primary/5 shadow-sm" 
                       : "border-muted hover:border-primary/50"
                   )}
+                  data-testid={`color-preset-${key}`}
                 >
                   {isSelected && (
                     <div className="absolute top-2 right-2">
@@ -249,10 +201,10 @@ const ThemeSettings = () => {
                   )}
                   <div 
                     className="w-10 h-10 rounded-full mb-3 border-2 border-white shadow-md"
-                    style={{ backgroundColor: presetHex }}
+                    style={{ backgroundColor: previewHex }}
                   />
                   <span className="font-medium text-sm">{preset.name}</span>
-                  <span className="text-xs text-muted-foreground">{preset.description}</span>
+                  <span className="text-xs text-muted-foreground">{presetDescriptions[key]}</span>
                 </button>
               );
             })}
@@ -262,11 +214,25 @@ const ThemeSettings = () => {
           <div className="mt-6 p-4 rounded-lg bg-muted/50 flex items-center gap-4">
             <div 
               className="w-12 h-12 rounded-lg shadow-inner border"
-              style={{ backgroundColor: primaryHex }}
+              style={{ backgroundColor: getPreviewColor(colorScheme) }}
             />
             <div>
               <p className="font-medium text-sm">Aktuelle Primärfarbe</p>
-              <p className="text-xs text-muted-foreground font-mono">{primaryHex}</p>
+              <p className="text-xs text-muted-foreground">{COLOR_PRESETS[colorScheme]?.name || 'CANUSA Standard'}</p>
+            </div>
+          </div>
+          
+          {/* Live Preview Box */}
+          <div className="mt-6 p-4 rounded-lg border border-border bg-card">
+            <p className="text-sm text-muted-foreground mb-3">Vorschau:</p>
+            <div className="flex items-center gap-3">
+              <div className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium">
+                Primär-Button
+              </div>
+              <div className="px-4 py-2 rounded-md bg-accent text-accent-foreground text-sm border border-primary/30">
+                Akzent-Element
+              </div>
+              <div className="w-3 h-3 rounded-full bg-primary animate-pulse" title="Aktiv-Indikator"></div>
             </div>
           </div>
         </CardContent>
