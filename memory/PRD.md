@@ -287,14 +287,10 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - **Passwort**: CanusaNexus2024!
 
 ## Test Coverage
+- Iteration 25: Backend 100% (13/13), Frontend 95% (20/21) - Article Move & Image Upload Tree
 - Iteration 24: Backend 100% (13/13), Frontend 100% (15/15, 1 skipped) - Documents Page Features
 - Iteration 23: Backend 100% (9/9), Frontend 100% (15/15) - Editor Improvements
 - Iteration 22: Backend 100% (14/14), Frontend 100% (11/11) - Notification System
-- Iteration 29: Backend 100% (14/14), Frontend 100% (12/12)
-- Iteration 28: Backend 100% (20/20), Frontend 100% (17/17)
-- Iteration 27: Backend 100% (17/17), Frontend 100% (38/38)
-- Iteration 26: Backend 100% (17/17), Frontend 100% (69/69)
-- Iteration 25: Backend 100% (22/22), Frontend 100% (34/34)
 - Last tested: 19.03.2026
 
 ## Editor Improvements (Iteration 23) - 19.03.2026
@@ -331,6 +327,16 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **Drag-Handles** - GripVertical Icons in der Listenansicht zeigen Drag-Möglichkeit an
 - ✅ **Droppable Ordner** - Ordner in der Baumansicht akzeptieren Drops und werden visuell hervorgehoben
 - ✅ **DragOverlay** - Zeigt Dateinamen/Thumbnail während des Ziehens
+
+## Artikel Verschieben & Bilder-Upload Verbesserung (Iteration 26) - 19.03.2026
+- ✅ **Artikel Verschieben** - "Verschieben" Option im Dropdown-Menü jedes Artikels
+- ✅ **Artikel Verschieben Dialog** - Hierarchische Kategorienauswahl im Dialog (wie bei neuen Kategorien)
+- ✅ **Drag & Drop für Artikel** - Artikel können per Drag & Drop zu Kategorien in der Seitenleiste verschoben werden
+- ✅ **Drag-Handles für Artikel** - GripVertical Icons zeigen Drag-Möglichkeit an
+- ✅ **Droppable Kategorien** - Kategorien in der Baumansicht akzeptieren Drops und werden visuell hervorgehoben
+- ✅ **Bilder-Upload Ordnerauswahl** - Hierarchische Baumstruktur statt flacher Dropdown-Liste
+- ✅ **Expand/Collapse für Ordner** - Pfeile zum Auf-/Zuklappen von Ordnern mit Unterordnern
+- ✅ **Auto-Auswahl "Bilder"** - "Bilder (automatisch)" ist als Standard vorausgewählt
 
 ## Backlog
 
