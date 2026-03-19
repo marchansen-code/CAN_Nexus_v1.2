@@ -421,8 +421,8 @@ async def delete_document(document_id: str, user: User = Depends(get_current_use
 
 
 @router.get("/{document_id}/file")
-async def get_document_file(document_id: str, user: User = Depends(get_current_user)):
-    """Get the actual file for viewing."""
+async def get_document_file(document_id: str, inline: bool = False, user: User = Depends(get_current_user)):
+    """Get the actual file for viewing or downloading."""
     doc = await db.documents.find_one(
         {"document_id": document_id, "deleted_at": {"$exists": False}},
         {"_id": 0}
@@ -438,10 +438,48 @@ async def get_document_file(document_id: str, user: User = Depends(get_current_u
     file_type = doc.get("file_type", ".pdf")
     media_type = SUPPORTED_EXTENSIONS.get(file_type, "application/octet-stream")
     
-    return FileResponse(
-        path=file_path,
+    # For inline viewing (preview), don't set filename to avoid download
+    if inline:
+        return FileResponse(
+            path=file_path,
+            media_type=media_type
+        )
+    else:
+        return FileResponse(
+            path=file_path,
+            media_type=media_type,
+            filename=doc.get("filename", "document")
+        )
+
+
+@router.get("/{document_id}/preview")
+async def get_document_preview(document_id: str, user: User = Depends(get_current_user)):
+    """Get the document file for inline preview (no download prompt)."""
+    doc = await db.documents.find_one(
+        {"document_id": document_id, "deleted_at": {"$exists": False}},
+        {"_id": 0}
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Dokument nicht gefunden")
+    
+    file_path = doc.get("file_path")
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+    
+    # Get file type and appropriate media type
+    file_type = doc.get("file_type", ".pdf")
+    media_type = SUPPORTED_EXTENSIONS.get(file_type, "application/octet-stream")
+    
+    # Return file without Content-Disposition: attachment header
+    with open(file_path, "rb") as f:
+        content = f.read()
+    
+    return Response(
+        content=content,
         media_type=media_type,
-        filename=doc.get("filename", "document")
+        headers={
+            "Content-Disposition": f"inline; filename=\"{doc.get('filename', 'document')}\""
+        }
     )
 
 

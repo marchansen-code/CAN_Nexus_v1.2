@@ -1772,10 +1772,10 @@ const RichTextEditor = ({ content, onChange, placeholder = "Inhalt eingeben...",
                   />
                 </div>
               ) : documentPreview.file_type === '.pdf' ? (
-                // PDF preview via iframe
+                // PDF preview via iframe with inline endpoint
                 <div className="h-[60vh]">
                   <iframe
-                    src={`${API}/documents/${documentPreview.document_id}/file`}
+                    src={`${API}/documents/${documentPreview.document_id}/preview`}
                     className="w-full h-full border-0 rounded-lg"
                     title={documentPreview.filename}
                   />
