@@ -287,6 +287,7 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - **Passwort**: CanusaNexus2024!
 
 ## Test Coverage
+- Iteration 24: Backend 100% (13/13), Frontend 100% (15/15, 1 skipped) - Documents Page Features
 - Iteration 23: Backend 100% (9/9), Frontend 100% (15/15) - Editor Improvements
 - Iteration 22: Backend 100% (14/14), Frontend 100% (11/11) - Notification System
 - Iteration 29: Backend 100% (14/14), Frontend 100% (12/12)
@@ -294,7 +295,6 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - Iteration 27: Backend 100% (17/17), Frontend 100% (38/38)
 - Iteration 26: Backend 100% (17/17), Frontend 100% (69/69)
 - Iteration 25: Backend 100% (22/22), Frontend 100% (34/34)
-- Iteration 24: Backend 100% (13/13), Frontend 100% (33/33)
 - Last tested: 19.03.2026
 
 ## Editor Improvements (Iteration 23) - 19.03.2026
@@ -320,6 +320,17 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **Sortierung Artikel** - Nach Aktualisiert, Erstellt, Titel, Aufrufe (auf-/absteigend)
 - ✅ **Sortierung Dokumente** - Nach Datum, Name, Größe (auf-/absteigend)
 - ✅ **Ansichtsmodus-Toggle** - Umschaltbar zwischen Liste und Galerie für Dokumente
+
+## Ordner-Navigation & Multi-Select (Iteration 25) - 19.03.2026
+- ✅ **Ordner-Navigation Bug behoben** - Klick auf Ordner aktualisiert jetzt korrekt die Dokumentenliste
+- ✅ **Multi-Select in Galerie-Ansicht** - Checkboxen erscheinen beim Hover über Bilder
+- ✅ **Bulk-Aktionsleiste** - Zeigt Anzahl ausgewählter Elemente mit Download/Verschieben/Löschen-Buttons
+- ✅ **Alle auswählen** - Button um alle Bilder in der Ansicht zu selektieren
+- ✅ **Drag & Drop für Dokumente** - Dokumente können per Drag & Drop in Ordner verschoben werden
+- ✅ **@dnd-kit Integration** - Moderne Drag & Drop Bibliothek für React
+- ✅ **Drag-Handles** - GripVertical Icons in der Listenansicht zeigen Drag-Möglichkeit an
+- ✅ **Droppable Ordner** - Ordner in der Baumansicht akzeptieren Drops und werden visuell hervorgehoben
+- ✅ **DragOverlay** - Zeigt Dateinamen/Thumbnail während des Ziehens
 
 ## Backlog
 
