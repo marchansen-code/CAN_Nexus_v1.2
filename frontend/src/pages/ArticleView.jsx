@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { API, AuthContext } from "@/App";
@@ -55,6 +55,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -113,11 +115,39 @@ const ArticleView = () => {
   // Google Drive export state
   const [driveExportOpen, setDriveExportOpen] = useState(false);
   const [driveConnected, setDriveConnected] = useState(false);
+  
+  // Document preview state
+  const [documentPreview, setDocumentPreview] = useState(null);
 
   const canEdit = user?.role === "admin" || user?.role === "editor";
   const isAdmin = user?.role === "admin";
   const isAuthor = article?.created_by === user?.user_id;
   const canViewAnalytics = isAdmin || isAuthor;
+
+  // Handle clicks on document links in article content
+  const handleContentClick = useCallback((event) => {
+    const link = event.target.closest('a[data-document-id]');
+    if (link) {
+      event.preventDefault();
+      const documentId = link.getAttribute('data-document-id');
+      if (documentId) {
+        axios.get(`${API}/documents/${documentId}`)
+          .then(res => setDocumentPreview(res.data))
+          .catch(err => console.error('Failed to load document:', err));
+      }
+    }
+    // Handle internal doc-preview links
+    const href = event.target.closest('a')?.getAttribute('href');
+    if (href && href.startsWith('#doc-preview-')) {
+      event.preventDefault();
+      const documentId = href.replace('#doc-preview-', '');
+      if (documentId) {
+        axios.get(`${API}/documents/${documentId}`)
+          .then(res => setDocumentPreview(res.data))
+          .catch(err => console.error('Failed to load document:', err));
+      }
+    }
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -467,6 +497,7 @@ const ArticleView = () => {
         <div 
           className="prose prose-slate dark:prose-invert max-w-none prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg prose-p:leading-7 prose-p:my-3 prose-a:text-red-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg prose-img:shadow-md prose-table:border-collapse prose-td:border prose-td:border-slate-300 prose-td:p-3 prose-th:border prose-th:border-slate-300 prose-th:p-3 prose-th:bg-slate-100 dark:prose-th:bg-slate-800 prose-blockquote:border-l-4 prose-blockquote:border-red-500 prose-blockquote:bg-slate-50 dark:prose-blockquote:bg-slate-900 prose-blockquote:py-1 prose-blockquote:px-4 prose-ul:my-3 prose-ol:my-3 prose-li:my-1"
           dangerouslySetInnerHTML={{ __html: article.content }}
+          onClick={handleContentClick}
           data-testid="article-content"
         />
 
@@ -837,6 +868,66 @@ const ArticleView = () => {
         articleId={article?.article_id}
         articleTitle={article?.title}
       />
+
+      {/* Document Preview Dialog */}
+      <Dialog open={!!documentPreview} onOpenChange={(open) => !open && setDocumentPreview(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              {documentPreview?.filename || documentPreview?.title || 'Dokumentenvorschau'}
+            </DialogTitle>
+            <DialogDescription>
+              {documentPreview?.file_size && (
+                <span>{(documentPreview.file_size / 1024).toFixed(1)} KB</span>
+              )}
+              {documentPreview?.created_at && (
+                <span className="ml-4">Hochgeladen: {new Date(documentPreview.created_at).toLocaleDateString('de-DE')}</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 min-h-0 overflow-auto">
+            {documentPreview && (
+              documentPreview.is_image && documentPreview.image_id ? (
+                <div className="flex items-center justify-center p-4">
+                  <img 
+                    src={`${API}/images/${documentPreview.image_id}`} 
+                    alt={documentPreview.filename}
+                    className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                  />
+                </div>
+              ) : (
+                <div className="h-[60vh]">
+                  <iframe
+                    src={`${API}/documents/${documentPreview.document_id}/file`}
+                    className="w-full h-full border-0 rounded-lg"
+                    title={documentPreview.filename}
+                  />
+                </div>
+              )
+            )}
+          </div>
+          
+          <DialogFooter className="flex-shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const url = documentPreview.image_id 
+                  ? `${API}/images/${documentPreview.image_id}`
+                  : `${API}/documents/${documentPreview.document_id}/file`;
+                window.open(url, '_blank');
+              }}
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              In neuem Tab öffnen
+            </Button>
+            <Button onClick={() => setDocumentPreview(null)}>
+              Schließen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
