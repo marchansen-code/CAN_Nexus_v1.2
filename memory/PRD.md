@@ -407,7 +407,7 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 │   └── email_service.py # E-Mail-Versand für Benachrichtigungen
 └── routes/
     ├── auth.py        # Login, Logout
-    ├── users.py       # Benutzer-CRUD mit Status-Benachrichtigungen
+    ├── users.py       # Benutzer-CRUD mit Status-Benachrichtigungen, Theme-Einstellungen
     ├── groups.py      # Gruppen-CRUD
     ├── categories.py  # Kategorien-CRUD
     ├── articles.py    # Artikel, Kommentare, Tags mit Benachrichtigungen
@@ -423,3 +423,41 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
     ├── google_drive.py # Google Drive Import/Export
     └── notifications.py # E-Mail-Benachrichtigungssystem
 ```
+
+## Dark Mode & Theme System (Iteration 29) - 19.03.2026
+- ✅ **Dark Mode Fixes** - Umfassende CSS-Korrekturen für lesbare Texte im Dark Mode
+  - Input-Felder, Textareas und Selects haben jetzt korrekten Kontrast
+  - Tabellen-Texte sind lesbar (Header und Daten-Zeilen)
+  - Überschriften (h1-h6) sind hell auf dunklem Hintergrund
+  - ProseMirror/TipTap Editor-Inhalte sind lesbar
+  - Formulare und Dialogboxen haben korrekte Farben
+- ✅ **Theme-Einstellungen für alle Benutzer** - Neuer Tab "Erscheinungsbild" in Einstellungen
+  - Theme-Modus auswählen: Hell, Dunkel, Automatisch
+  - Farbschema-Vorlagen: CANUSA Standard, Ozean Blau, Wald Grün, Sonnenuntergang, Lavendel, Mitternacht
+  - "Auf Standard zurücksetzen" Button
+  - "Einstellungen speichern" Button
+- ✅ **Theme aus Header entfernt** - Theme-Indikator verlinkt jetzt zu den Einstellungen
+- ✅ **Einstellungen für alle Rollen sichtbar** - Nicht nur Admins können auf Einstellungen zugreifen
+- ✅ **Admin: Theme zurücksetzen** - Neuer "Theme" Button in der Benutzerverwaltung
+  - Setzt das Theme eines Benutzers auf Standard (Light Mode) zurück
+- **Neue API-Endpunkte**:
+  - `GET /api/users/me/theme` - Theme-Einstellungen des aktuellen Benutzers abrufen
+  - `PUT /api/users/me/theme` - Theme-Einstellungen speichern
+  - `PUT /api/users/{id}/reset-theme` - Theme eines Benutzers zurücksetzen (Admin)
+- **Neue Komponenten**:
+  - `ThemeSettings.jsx` - Erscheinungsbild-Einstellungskomponente
+  - `ThemeProvider.jsx` - Erweitert mit Farbschema-Support und Server-Sync
+
+## Known Issues / Backlog
+
+### P1 (Kritisch)
+- [ ] Google Drive Import Dialog - "Meine Ablage" Tab reagiert nicht (wiederkehrendes Problem)
+- [ ] Export zu Google Shared Drive funktioniert nicht
+- [ ] Google Drive Dateiliste im Export-Dialog ist fehlerhaft
+
+### P2 (Medium)
+- [ ] Schnellsuche (Strg+K)
+
+### P3 (Nice to Have)
+- [ ] OCR für gescannte PDFs
+
