@@ -68,14 +68,69 @@
 .dark textarea,
 .dark select,
 .dark [contenteditable] {
-    color: hsl(210 20% 98%);
+    color: hsl(210 20% 98%) !important;
+    background-color: hsl(217 33% 17%);
 }
 
 .dark input::placeholder,
 .dark textarea::placeholder {
-    color: hsl(215 20% 60%);
+    color: hsl(215 20% 55%) !important;
 }
 
+/* Dark mode form elements */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select {
+    background-color: hsl(217 33% 17%) !important;
+    border-color: hsl(217 33% 30%) !important;
+    color: hsl(210 20% 98%) !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+    border-color: hsl(0 84% 55%) !important;
+}
+
+/* Dark mode headings */
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: hsl(210 20% 98%);
+}
+
+/* Dark mode labels and text */
+.dark label {
+    color: hsl(210 20% 90%);
+}
+
+/* Dark mode tables */
+.dark table {
+    color: hsl(210 20% 98%);
+}
+
+.dark th {
+    background-color: hsl(217 33% 17%) !important;
+    color: hsl(210 20% 98%) !important;
+    border-color: hsl(217 33% 30%) !important;
+}
+
+.dark td {
+    background-color: hsl(222 47% 11%);
+    color: hsl(210 20% 98%) !important;
+    border-color: hsl(217 33% 25%) !important;
+}
+
+.dark tr:hover td {
+    background-color: hsl(217 33% 15%);
+}
+
+/* Dark mode cards */
+.dark .card,
+.dark [class*="CardContent"],
+.dark [class*="CardHeader"] {
+    color: hsl(210 20% 98%);
+}
+
+/* Dark mode prose */
 .dark .prose {
     color: hsl(210 20% 95%);
 }
@@ -87,6 +142,29 @@
 .dark .prose h5,
 .dark .prose h6 {
     color: hsl(210 20% 98%);
+}
+
+.dark .prose p,
+.dark .prose li,
+.dark .prose span {
+    color: hsl(210 20% 92%);
+}
+
+/* Dark mode specific component fixes */
+.dark [data-radix-select-viewport],
+.dark [data-radix-popper-content-wrapper] select,
+.dark [role="listbox"] {
+    background-color: hsl(222 47% 11%) !important;
+    color: hsl(210 20% 98%) !important;
+}
+
+.dark [role="option"] {
+    color: hsl(210 20% 98%) !important;
+}
+
+.dark [role="option"]:hover,
+.dark [role="option"][data-highlighted] {
+    background-color: hsl(217 33% 20%) !important;
 }
 
 body {
@@ -383,20 +461,46 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* Dark mode editor */
+/* Dark mode editor - ProseMirror */
 .dark .ProseMirror {
-    color: hsl(210 20% 98%);
+    color: hsl(210 20% 98%) !important;
+    background-color: hsl(222 47% 11%);
+}
+
+.dark .ProseMirror p,
+.dark .ProseMirror span,
+.dark .ProseMirror li {
+    color: hsl(210 20% 95%) !important;
+}
+
+.dark .ProseMirror h1,
+.dark .ProseMirror h2,
+.dark .ProseMirror h3,
+.dark .ProseMirror h4 {
+    color: hsl(210 20% 98%) !important;
 }
 
 .dark .ProseMirror blockquote {
     color: hsl(215 20% 70%);
+    background-color: hsl(217 33% 15%);
 }
 
 .dark .ProseMirror td, .dark .ProseMirror th {
     border-color: hsl(217 33% 30%);
+    color: hsl(210 20% 98%) !important;
 }
 
 .dark .ProseMirror th {
     background: hsl(217 33% 20%);
+}
+
+.dark .ProseMirror td {
+    background-color: hsl(222 47% 13%);
+}
+
+/* Dark mode editor placeholder */
+.dark .ProseMirror p.is-editor-empty:first-child::before {
+    color: hsl(215 20% 50%);
 }
 
 /* Table Resize Handles */
@@ -647,4 +751,177 @@ input:focus, textarea:focus, select:focus {
 
 [data-testid="article-content"] p:last-child {
     margin-bottom: 0 !important;
+}
+
+
+/* Additional Dark Mode Fixes */
+
+/* Dark mode sidebar navigation */
+.dark .tree-item.active {
+    background-color: hsl(0 84% 15%);
+    color: hsl(0 84% 85%);
+    border-color: hsl(0 84% 50%);
+}
+
+/* Dark mode badges */
+.dark .status-draft {
+    background-color: hsl(217 33% 20%);
+    color: hsl(210 20% 90%);
+    border-color: hsl(217 33% 30%);
+}
+
+.dark .status-review {
+    background-color: hsl(45 60% 15%);
+    color: hsl(45 90% 80%);
+    border-color: hsl(45 60% 25%);
+}
+
+.dark .status-published {
+    background-color: hsl(145 40% 15%);
+    color: hsl(145 60% 80%);
+    border-color: hsl(145 40% 25%);
+}
+
+/* Dark mode alert/info cards */
+.dark .border-amber-200 {
+    border-color: hsl(45 60% 25%) !important;
+}
+
+.dark .bg-amber-50 {
+    background-color: hsl(45 60% 12%) !important;
+}
+
+.dark .text-amber-800 {
+    color: hsl(45 90% 75%) !important;
+}
+
+.dark .text-amber-700 {
+    color: hsl(45 90% 70%) !important;
+}
+
+/* Dark mode glass header */
+.dark .glass-header {
+    background-color: hsl(222 47% 11% / 0.9);
+    border-color: hsl(217 33% 25%);
+}
+
+/* Dark mode scrollbar */
+.dark::-webkit-scrollbar-track {
+    background: hsl(222 47% 11%);
+}
+
+.dark::-webkit-scrollbar-thumb {
+    background: hsl(217 33% 30%);
+}
+
+.dark::-webkit-scrollbar-thumb:hover {
+    background: hsl(217 33% 40%);
+}
+
+/* Dark mode code blocks */
+.dark .prose-knowledge code {
+    background-color: hsl(217 33% 20%);
+    color: hsl(0 84% 75%);
+}
+
+/* Dark mode dialogs and popovers */
+.dark [role="dialog"],
+.dark [data-radix-dialog-content],
+.dark [data-radix-popover-content] {
+    background-color: hsl(222 47% 11%) !important;
+    color: hsl(210 20% 98%) !important;
+    border-color: hsl(217 33% 25%) !important;
+}
+
+/* Dark mode command/menu items */
+.dark [cmdk-item],
+.dark [role="menuitem"] {
+    color: hsl(210 20% 95%) !important;
+}
+
+.dark [cmdk-item][aria-selected="true"],
+.dark [role="menuitem"]:hover {
+    background-color: hsl(217 33% 17%) !important;
+}
+
+/* Dark mode checkbox and switch */
+.dark [role="checkbox"],
+.dark [role="switch"] {
+    border-color: hsl(217 33% 35%);
+}
+
+/* Dark mode tabs */
+.dark [role="tablist"] {
+    background-color: hsl(217 33% 15%);
+}
+
+.dark [role="tab"][aria-selected="true"] {
+    background-color: hsl(222 47% 11%);
+    color: hsl(210 20% 98%);
+}
+
+/* Dark mode separator */
+.dark [data-orientation="horizontal"] {
+    background-color: hsl(217 33% 25%);
+}
+
+/* Dark mode avatar fallback */
+.dark .bg-red-100 {
+    background-color: hsl(0 84% 15%) !important;
+}
+
+.dark .text-red-700 {
+    color: hsl(0 84% 75%) !important;
+}
+
+.dark .bg-indigo-100 {
+    background-color: hsl(220 84% 15%) !important;
+}
+
+.dark .text-indigo-700 {
+    color: hsl(220 84% 75%) !important;
+}
+
+/* Dark mode Calendar */
+.dark .rdp {
+    --rdp-background-color: hsl(217 33% 17%);
+    --rdp-accent-color: hsl(0 84% 55%);
+    --rdp-accent-color-dark: hsl(0 84% 45%);
+}
+
+.dark .rdp-day_selected {
+    background-color: hsl(0 84% 55%) !important;
+}
+
+/* Fix for article content text in dark mode */
+.dark [data-testid="article-content"],
+.dark [data-testid="article-content"] * {
+    color: hsl(210 20% 92%);
+}
+
+.dark [data-testid="article-content"] h1,
+.dark [data-testid="article-content"] h2,
+.dark [data-testid="article-content"] h3,
+.dark [data-testid="article-content"] h4 {
+    color: hsl(210 20% 98%) !important;
+}
+
+/* Dark mode for shadcn Select component */
+.dark [data-radix-select-trigger] {
+    background-color: hsl(217 33% 17%) !important;
+    border-color: hsl(217 33% 30%) !important;
+    color: hsl(210 20% 98%) !important;
+}
+
+.dark [data-radix-select-content] {
+    background-color: hsl(222 47% 11%) !important;
+    border-color: hsl(217 33% 25%) !important;
+}
+
+.dark [data-radix-select-item] {
+    color: hsl(210 20% 95%) !important;
+}
+
+.dark [data-radix-select-item][data-highlighted] {
+    background-color: hsl(217 33% 20%) !important;
 }

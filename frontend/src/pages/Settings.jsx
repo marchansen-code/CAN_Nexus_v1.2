@@ -8,13 +8,15 @@ import {
   Check,
   ExternalLink,
   Globe,
-  Bell
+  Bell,
+  Palette
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import NotificationSettings from "@/components/NotificationSettings";
+import ThemeSettings from "@/components/ThemeSettings";
 
 const Settings = () => {
   const { user } = useContext(AuthContext);
@@ -83,6 +85,10 @@ const Settings = () => {
             <User className="w-4 h-4" />
             Profil
           </TabsTrigger>
+          <TabsTrigger value="theme" className="gap-2">
+            <Palette className="w-4 h-4" />
+            Erscheinungsbild
+          </TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="w-4 h-4" />
             Benachrichtigungen
@@ -118,13 +124,18 @@ const Settings = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-amber-200 bg-amber-50">
+          <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20">
             <CardContent className="p-4">
-              <p className="text-sm text-amber-800">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
                 <strong>Passwort ändern?</strong> Wenden Sie sich an einen Administrator, um Ihr Passwort zurücksetzen zu lassen.
               </p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Theme Tab */}
+        <TabsContent value="theme" className="space-y-6">
+          <ThemeSettings />
         </TabsContent>
 
         {/* Notifications Tab */}

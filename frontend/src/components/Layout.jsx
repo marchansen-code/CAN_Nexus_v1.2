@@ -43,7 +43,7 @@ const allNavItems = [
   { path: "/groups", icon: UsersRound, label: "Gruppen", roles: ["admin"] },
   { path: "/trash", icon: Trash2, label: "Papierkorb", roles: ["admin"] },
   { path: "/backup", icon: Database, label: "Backup", roles: ["admin"] },
-  { path: "/settings", icon: Settings, label: "Einstellungen", roles: ["admin"] },
+  { path: "/settings", icon: Settings, label: "Einstellungen", roles: ["admin", "editor", "viewer"] },
 ];
 
 const Sidebar = ({ className = "", onNavigate, userRole }) => {
@@ -162,36 +162,22 @@ const Header = () => {
         {/* Spacer for desktop */}
         <div className="hidden lg:block" />
 
-        {/* Theme Toggle & User Menu */}
+        {/* Theme Indicator & User Menu */}
         <div className="flex items-center gap-2">
-          {/* Theme Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="gap-1.5 text-muted-foreground hover:text-foreground"
-                data-testid="theme-toggle"
-              >
-                {theme === 'dark' ? <Moon className="w-4 h-4" /> : theme === 'light' ? <Sun className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
-                <span className="hidden sm:inline text-xs">Mode</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setTheme('light')} className={theme === 'light' ? 'bg-muted' : ''}>
-                <Sun className="w-4 h-4 mr-2" />
-                Hell
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme('dark')} className={theme === 'dark' ? 'bg-muted' : ''}>
-                <Moon className="w-4 h-4 mr-2" />
-                Dunkel
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme('system')} className={theme === 'system' ? 'bg-muted' : ''}>
-                <Monitor className="w-4 h-4 mr-2" />
-                Automatisch
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Theme Indicator - links to settings */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="gap-1.5 text-muted-foreground hover:text-foreground"
+            data-testid="theme-indicator"
+            onClick={() => navigate("/settings")}
+            title="Theme-Einstellungen"
+          >
+            {theme === 'dark' ? <Moon className="w-4 h-4" /> : theme === 'light' ? <Sun className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+            <span className="hidden sm:inline text-xs">
+              {theme === 'dark' ? 'Dunkel' : theme === 'light' ? 'Hell' : 'Auto'}
+            </span>
+          </Button>
 
           {/* User Menu */}
           <DropdownMenu>

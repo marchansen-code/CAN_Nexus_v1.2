@@ -11,7 +11,7 @@ export default defineConfig({
     ['json', { outputFile: '/root/.emergent/automation_output/20260319_111945/results.json' }],
   ],
   use: {
-    baseURL: 'https://nexus-know.preview.emergentagent.com',
+    baseURL: 'https://nexus-platform-36.preview.emergentagent.com',
     screenshot: 'only-on-failure',
     trace: 'off',
     headless: true,

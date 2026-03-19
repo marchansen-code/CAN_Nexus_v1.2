@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 
-const BASE_URL = 'https://nexus-know.preview.emergentagent.com';
+const BASE_URL = 'https://nexus-platform-36.preview.emergentagent.com';
 const ADMIN_EMAIL = 'marc.hansen@canusa.de';
 const ADMIN_PASSWORD = 'CanusaNexus2024!';
 

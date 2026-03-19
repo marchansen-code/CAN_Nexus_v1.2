@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'https://nexus-know.preview.emergentagent.com';
+const BASE_URL = 'https://nexus-platform-36.preview.emergentagent.com';
 const TEST_DOC_ID = 'doc_71438fad9dc7';
 
 test.describe('PDF Viewer Feature', () => {

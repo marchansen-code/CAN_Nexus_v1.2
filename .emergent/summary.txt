@@ -1,124 +1,100 @@
 <analysis>**original_problem_statement:**
-The user's initial goal was to build a comprehensive knowledge management platform named CANUSA Nexus. The project has evolved through several feature implementations.
+The user's initial goal was to build a comprehensive knowledge management platform named CANUSA Nexus.
 
-The most recent set of user requests includes:
-- **Bug Fix**: In the Dokumente section, clicking a folder on the left does not update the file list on the right.
-- **Feature**: Implement multi-select in the gallery view for bulk actions (e.g., download, move, delete).
-- **Feature**: Implement Drag & Drop for reordering folders and documents.
-- **Feature**: Automatically save images pasted via copy & paste into the editor to the Bilder folder (Implemented).
-- **Feature**: Add a gallery view for images in the Dokumente section (Implemented).
-- **Feature**: Add an image upload dialog directly to the Dokumente section (Implemented).
-- **Feature**: Reorganize the dashboard to show the newest articles at the top (Implemented).
-- **Feature**: Add sorting functionality to the Artikel and Dokumente sections (Implemented).
-- **Feature**: Fix an issue where multi-image uploads only inserted one image into the article (Implemented).
-- **Feature**: Enhance the image upload dialog to allow selecting or creating a destination folder (Implemented).
-- **Feature**: Add image previews and metadata in the Dokumente section (Implemented).
-- **Bug Fix**: Fix UI bugs in the Google Drive import dialog and the fullscreen editor (Implemented).
-- **Bug Fix**: Fix list rendering (bullet/numbered) in the article view (Implemented).
-
-The user is also experiencing deployment issues on their own server, specifically a  when the application tries to reach Google's servers for OAuth, and previously a  error.
+During this session, the user added the following requests, which have all been implemented:
+- Add a move function and drag & drop capabilities for articles into categories.
+- Change the image upload dialog to use a hierarchical tree for folder selection, similar to the category selector.
+- Add a last online timestamp for users in the user management section, visible to admins.
+- Implement folder moving (including moving into other folders) via drag & drop or an edit menu.
+- Add a confirmation dialog (Are you sure you want to move X to Y?) before any drag & drop move is finalized.
+- When a YouTube link is pasted into the editor, prompt the user to choose between an embedded preview or a simple link.
+- Enhance the editor's link function:
+    - Allow linking to documents within the system.
+    - When linking to a document, the link should open a full-screen preview popup.
+    - If no text is selected, provide options for a thumbnail, custom text, or a shortened link.
+- Fix a bug where the document preview for DOCX files was broken, showing File not found.
+- Fix a bug where clicking a link to a PDF document in an article would download the file instead of opening the preview.
+- Enhance the document selection dialog (for linking) to include a hierarchical folder browser to navigate and find files.
+- Remove the Made with Emergent badge from the UI.
+- Change the application version display to 1.4.
 
 **User's preferred language**: Deutsch
 
 **what currently exists?**
-The application is a full-stack knowledge management platform using React, FastAPI, and MongoDB.
-- **Authentication**: JWT-based and Google OAuth 2.0.
-- **Content Management**: A Tiptap-based rich text editor with @mentions, HTML mode, multi-image upload, and paste-to-upload.
-- **Document Management**: Hierarchical folder structure. Supports uploading various file types. The document section now features both list and gallery views, sorting, and image previews with metadata.
-- **Notification System**: A complete SMTP-based email notification system for events like @mentions, article reviews, and status changes. It is fully functional using a Google App Password.
-- **Google Drive Integration**: Implemented for import/export, but has several long-standing, unresolved bugs.
-- **Deployment Support**: A  endpoint has been added for debugging environment variables on the user's server.
+The application is a full-stack knowledge management platform (React/FastAPI/MongoDB) with JWT and Google OAuth.
+- **Content Management**: A highly featured Tiptap-based editor now supports advanced document linking (with a hierarchical browser and full-screen previews), and a user prompt for handling YouTube link previews.
+- **Document Management**: Features a robust, hierarchical folder system. The UI supports list/gallery views, sorting, multi-select for bulk actions, and drag & drop for both documents and folders. A confirmation dialog is now in place for all drag-and-drop move operations.
+- **Article Management**: Articles can be organized into categories and moved between them via drag & drop.
+- **User Management**: Admins can now see a last active status for each user, indicating their last login time.
+- **UI**: The application version is now , and the Made with Emergent badge has been removed.
+- **Bug Fixes**: Critical bugs related to document previews for both DOCX (rendering HTML content) and PDFs (displaying inline instead of downloading) have been resolved.
 
 **Last working item**:
-- **Last item agent was working**: Investigating a bug where clicking a folder in the  page's tree view does not update the content view on the right side. The agent had just started by viewing the relevant file.
-- **Status**: IN PROGRESS
-- **Agent Testing Done**: N
-- **Which testing method agent to use?**: Frontend testing agent. The test should verify that after clicking a folder in the tree view, the document list on the right updates to show only the contents of that folder.
-- **User Testing Done**: N
+- **Last item agent was working**: Removing the Made with Emergent badge and updating the version number to 1.4 in the UI.
+- **Status**: NONE (This task is complete and was verified by the user).
+- **Agent Testing Done**: Y
+- **Which testing method agent to use?**: NA
+- **User Testing Done**: Y
 
 **All Pending/In progress Issue list**:
-- **Issue 1**: Folder click does not update view in Documents page (P0)
-- **Issue 2**: User's production server cannot connect to Google for OAuth (P1)
-- **Issue 3**: Google Drive Import dialog is broken (Meine Ablage tab unresponsive) (P1)
-- **Issue 4**: Exporting to a Google Shared Drive fails (P2)
-- **Issue 5**: Google Drive file list in export dialog is incorrect (P2)
+- **Issue 1**: Google Drive Import dialog is broken (Meine Ablage tab unresponsive) (P1)
+- **Issue 2**: Exporting to a Google Shared Drive fails (P2)
+- **Issue 3**: Google Drive file list in export dialog is incorrect (P2)
 
 **Issues Detail:**
-- **Issue 1: Folder click does not update view in Documents page**
-  - **Description**: In , when a user clicks a folder in the left-side tree view, the main content area on the right is not updated to show that folder's contents. This breaks the primary navigation method for documents.
-  - **Attempted fixes**: The agent viewed  to begin investigation. No code changes have been made yet.
-  - **Next debug checklist**:
-    - Check the  handler () for folders within the  component in .
-    - Verify that the  state is being updated correctly upon click.
-    - Examine the  memoized calculation to ensure it correctly filters based on .
-    - Log the  and the  array to the console to trace the state flow.
-  - **Why fix this issue and what will be achieved with the fix?**: This is a critical bug blocking core functionality of the document management system.
-  - **Status**: IN PROGRESS
-  - **Is recurring issue?**: N
-  - **Should Test frontend/backend/both after fix?**: Frontend.
-  - **Blocked on other issue**: None.
-
-- **Issue 2: User's production server cannot connect to Google for OAuth**
-  - **Description**: When using Login with Google on the user's production server (), the backend fails with an . This indicates the Docker container running the backend cannot establish an outbound connection to Google's servers. The  endpoint confirms the environment variables are loaded correctly.
-  - **Attempted fixes**: The agent diagnosed this as a Docker networking or DNS issue and suggested adding a  configuration () to the  service in .
-  - **Next debug checklist**:
-    1.  Ask the user to confirm if they applied the  fix to their  and rebuilt the container.
-    2.  If the issue persists, ask the user to run diagnostic commands inside the container:  and .
-  - **Why fix this issue and what will be achieved with the fix?**: This bug makes Google OAuth non-functional in the user's production environment.
-  - **Status**: BLOCKED (Waiting for user action/feedback)
-  - **Is recurring issue?**: Y (Deployment issues have occurred before)
-  - **Should Test frontend/backend/both after fix?**: Backend (on user's environment).
-  - **Blocked on other issue**: None.
-
-- **Issue 3: Google Drive Import dialog is broken (Meine Ablage tab unresponsive)**
-  - **Description**: A recurring critical bug from a previous session. In the Google Drive Import dialog, the Meine Ablage (My Drive) tab is unresponsive, preventing users from browsing and importing their files.
-  - **Attempted fixes**: No new fixes were attempted in this session. Previous fixes were unsuccessful.
-  - **Next debug checklist**: Follow the checklist from the initial handoff summary: Re-examine , check console for errors on click, verify network requests to , and inspect component state.
-  - **Why fix this issue and what will be achieved with the fix?**: A key integration feature is completely non-functional.
+- **Issue 1: Google Drive Import dialog is broken (Meine Ablage tab unresponsive)**
+  - **Description**: This is a long-standing, recurring critical bug. The My Drive tab in the Google Drive import dialog does not respond to clicks, blocking all file imports from a user's personal drive.
+  - **Attempted fixes**: None in this session.
+  - **Next debug checklist**: Re-examine , check the browser console for errors on click, verify network requests to , and inspect the component state to understand why the click handler or state update is failing.
+  - **Why fix this issue and what will be achieved with the fix?**: This is a key integration feature that is completely non-functional. Fixing it will restore a primary method for getting content into the platform.
   - **Status**: NOT STARTED
   - **Is recurring issue?**: Y
   - **Should Test frontend/backend/both after fix?**: Both.
   - **Blocked on other issue**: None.
 
-- **Issue 4 & 5**: Refer to the Earlier issues found/mentioned but not fixed section. These are lower priority Google Drive bugs that have not been addressed.
+- **Issue 2: Exporting to a Google Shared Drive fails**
+  - **Description**: The feature to export articles to a Google Shared Drive is not working.
+  - **Next debug checklist**: Verify the backend call in  correctly uses . Check backend logs for API errors from Google during an export attempt.
+  - **Status**: NOT STARTED
+  - **Is recurring issue?**: N
+  - **Should Test frontend/backend/both after fix?**: Backend.
+
+- **Issue 3: Google Drive file list in export dialog is incorrect**
+  - **Description**: The list of files shown in the Google Drive export dialog does not accurately reflect the files the user owns.
+  - **Next debug checklist**: Verify the API call in  correctly uses the  query filter. Compare the UI list with the user's actual Google Drive content to identify discrepancies.
+  - **Status**: NOT STARTED
+  - **Is recurring issue?**: N
+  - **Should Test frontend/backend/both after fix?**: Both.
 
 **In progress Task List**:
 - None.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks**:
-  - **P1: Implement Multi-select**: Add checkbox-based multi-selection to the gallery view in  to enable bulk actions (download, move, delete).
-  - **P1: Implement Drag & Drop**: Add drag-and-drop functionality to the folder tree and document list in  for intuitive moving and reordering.
-- **Future Tasks**:
   - **P3: OCR for Scanned PDFs**: Add a feature to extract text from image-based PDFs during upload.
+- **Future Tasks**:
+  - **Backlog: Schnellsuche (Strg+K)**: Implement a command-palette style quick search functionality.
 
 **Completed work in this session**
-- **Notification System**: A complete, tested, and functional SMTP-based email notification system was implemented for all required events (@mentions, reviews, etc.).
-- **Production Deployment Support**: Provided updated  and  files, added a  debug endpoint, and diagnosed a production  error as a Docker networking/DNS issue.
-- **Editor Enhancements**:
-  - Fixed list rendering and fullscreen editor UI bugs.
-  - Implemented multi-image upload (with folder selection) and paste-to-upload.
-  - Added an HTML source editor mode.
-- **Document & UI Enhancements**:
-  - Implemented a gallery view for images with hover actions and a preview dialog.
-  - Added sorting capabilities to both the Articles and Documents pages.
-  - Reorganized the Dashboard layout to prioritize recent articles.
-  - Added direct image upload capabilities to the Documents page.
-  - Fixed various UI bugs (e.g., button overflow in dialogs).
+- **Bug Fix**: Folder click in  now correctly filters the document list.
+- **Feature**: Multi-select and bulk actions in the  gallery view.
+- **Feature**: Drag & drop for both documents and folders in .
+- **Feature**: Drag & drop to move articles between categories in .
+- **Feature**: Implemented Last online status for users in .
+- **Feature**: Added a confirmation dialog for all drag-and-drop operations.
+- **Feature**: Hierarchical folder selector implemented in .
+- **Feature**: Enhanced the editor's link tool () to include a hierarchical document browser and preview functionality.
+- **Feature**: The editor now prompts users to choose how to display pasted YouTube links.
+- **Bug Fix**: Fixed document previews for DOCX and other office files to render HTML instead of showing an error.
+- **Bug Fix**: Corrected PDF previews to display inline instead of forcing a download.
+- **UI**: Removed the Made with Emergent badge and updated the version to .
 
 **Earlier issues found/mentioned but not fixed**
-- **Issue**: Exporting to a Google Shared Drive fails.
-  - **Debug checklist**: Verify the backend call in  correctly uses . Check backend logs for errors during an export attempt.
-  - **Why to solve**: Fixes a key part of the Google Drive export functionality.
-  - **Should Test**: Backend.
-- **Issue**: Google Drive file list in the export dialog is incorrect.
-  - **Debug checklist**: Verify the API call in  correctly uses the  filter. Compare the UI list with the user's actual Google Drive content.
-  - **Why to solve**: Ensures correct files are displayed to the user for export.
-  - **Should Test**: Both.
+- The pending Google Drive integration issues (unresponsive import tab, failing shared drive export, incorrect export file list) were noted in the initial handoff and remain unresolved.
 
 **Known issue recurrence from previous fork**
 - **Issue recurrence in previous fork**: The  Meine Ablage tab being unresponsive.
-- **Recurrence count**: 3+
+- **Recurrence count**: 4+
 - **Status**: NOT STARTED
 
 **Code Architecture**
@@ -126,70 +102,85 @@ The application is a full-stack knowledge management platform using React, FastA
 
 **Key Technical Concepts**
 - **Backend**: FastAPI, Motor (MongoDB), Pydantic.
-- **Frontend**: React, , , Shadcn UI, TipTap editor.
-- **Email**:  for asynchronous SMTP.
-- **File Handling**:  for uploads,  API for handling pasted images.
-- **Deployment**: Docker, Docker Compose, Nginx. Diagnosing Docker container networking.
+- **Frontend**: React, , , Shadcn UI, TipTap editor, **@dnd-kit** (newly added for drag & drop).
+- **Deployment**: Docker, Docker Compose, Nginx.
+- **API Design**: Differentiating file serving headers ( vs ).
 
 **key DB schema**
-- **users**: Contains a  sub-document: .
-- **articles**: Now includes  and .
-- **documents**: Schema now accommodates image metadata. No structural change, but  etc. is used to differentiate content.
+- **users**: Added  to track user activity.
+
+**changes in tech stack**
+- **New Dependency**: Added , , and  to the frontend for drag and drop functionality.
 
 **All files of reference**
--  (Location of the current bug and upcoming features)
--  (Related to paste and drag/drop features)
--  (Recurring critical bug)
--  (Handles image uploads)
--  (Relevant to the user's production issue)
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+**Areas that need refactoring**:
+- The , , and  files have become very large and complex. The drag-and-drop logic (components, hooks, handlers) and the various dialogs could be extracted into separate, reusable components/hooks to improve maintainability.
+
+**key api endpoints**
+- : Moves a folder to a new parent.
+- : Serves a file with  for browser viewing.
+- : Serves a file with  for download.
+- : Modified to update the  timestamp on login.
+- : Modified to update the  timestamp on session validation.
 
 **Critical Info for New Agent**
 - You **MUST** respond in **German**.
-- **Top Priority**: First, fix the bug in  where clicking a folder doesn't update the view. This is the user's most recent and explicit bug report.
-- **User's Environment**: The user is having trouble with deployment. The  error for Google OAuth is a Docker networking issue on their server. Be prepared to guide them through debugging it (e.g., confirming the  fix).
-- **Upcoming Features**: After the bug fix, the user has requested multi-select in the gallery view and drag & drop for document/folder organization.
-- **Old Bugs**: Be aware of the long-standing, unresolved issues with the Google Drive integration (especially the unresponsive Meine Ablage tab). Do not assume they are fixed.
+- The highest priority technical debt is the broken **Google Drive integration**. The Meine Ablage (My Drive) tab in the import dialog is a recurring critical bug that has not been addressed.
+- After addressing any immediate bugs, the next major feature requested by the user is **OCR for scanned PDFs**.
+- The core UI for documents and articles is now significantly more powerful with drag-and-drop and advanced linking. Maintain the pattern of using a confirmation dialog for all drag-and-drop move operations.
 
 **documents and test reports created in this job**
--  (Updated with completed tasks)
--  (Notification system tests)
--  (Editor improvements tests)
+-  (Updated throughout the session)
+- 
+- 
+- 
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1. **User**: Requests bug fixes (folder view, image status tags) and new features (actions in gallery, Drive export in preview). **Status: Implemented**.
-2. **User**: Requests gallery view, image upload in docs, paste-to-upload, dashboard reorder, and sorting. **Status: Implemented**.
-3. **User**: Confirms the previous fixes and requests more editor/document features, including fixing a fullscreen bug and adding an HTML editor. **Status: Implemented**.
-4. **User**: Reports multiple issues: Google Drive import buttons overflow, multi-image upload only inserts one image, and requests folder selection in the upload dialog and image previews in the documents list. **Status: Implemented**.
-5. **User**: Confirms the plan to fix editor/document issues. **Status: Completed**.
-6. **User**: Asks for several editor improvements and bug fixes related to list rendering, fullscreen view, multi-image upload, and an HTML editor. **Status: Superseded by next message**.
-7. **User**: Provides logs from their production server showing a  error when trying to use Google Login. **Status: In Progress (Diagnosed, fix proposed)**.
-8. **User**: Reports 502 Bad Gateway after applying deployment changes, then confirms the dashboard is accessible again but Google Login results in an Internal Server Error. **Status: Superseded by next message with logs**.
-9. **User**: Reports that the  to  is OK, but the site is inaccessible (502 Bad Gateway). **Status: Superseded by next message**.
-10. **User**: Provides details about their production server environment. **Status: In Progress (Agent is creating new deployment files)**.
+1. **User**: Add a last online feature, folder moving, and a D&D confirmation dialog. **Status: Completed.**
+2. **User**: Add YouTube preview options and an advanced document linking feature to the editor. **Status: Completed.**
+3. **User**: Reports that the document preview for DOCX files is broken. **Status: Completed (Fixed).**
+4. **User**: Reports that linked PDFs are being downloaded instead of previewed. **Status: Completed (Fixed).**
+5. **User**: Requests a hierarchical folder browser in the document linking dialog. **Status: Completed.**
+6. **User**: Asks to remove the Made with Emergent badge and update the version number to 1.4. **Status: Completed.**
+7. **User**: (Final user message of previous session) Acknowledges the summary for the badge/version update. **Status: Completed.**
 
 **Project Health Check:**
 - **Broken**:
-  - : Folder navigation is non-functional.
-  - : Core import functionality from My Drive is reported as broken.
-  - Production Environment: Google OAuth is broken due to a network timeout () from the backend container.
+  - : The Meine Ablage (My Drive) tab is unresponsive, blocking a primary import path.
+  - Google Drive Shared Drive export functionality is not working.
 - **Mocked**: None.
 
 **3rd Party Integrations**
-- **Google OAuth**: Complete in dev environment, but **broken** on the user's production server.
-- **Google Drive API**: In Progress. Implemented for import/export but has several outstanding, critical bugs.
+- **Google OAuth**: Complete and functional.
+- **Google Drive API**: **Partially implemented but critically buggy.** Import and export features are unreliable or non-functional.
 - **SMTP (Gmail)**: Completed and functional.
+- **@dnd-kit**: Newly integrated for drag-and-drop UI.
 
 **Testing status**
-- **Testing agent used after significant changes**: YES. Used after the notification system and editor improvements, with all tests passing.
+- **Testing agent used after significant changes**: YES. The testing agent was used successfully after every major feature implementation, with all new tests passing.
 - **Troubleshoot agent used after agent stuck in loop**: NO.
-- **Test files created**: Test suites were updated by the testing agent. No new manual files.
-- **Known regressions**: The Google Drive import dialog functionality remains a persistent regression from previous work.
+- **Test files created**: Test reports were generated for iterations 24 through 27.
+- **Known regressions**: The Google Drive import dialog remains a persistent regression.
 
 **Credentials to test flow:**
 - **Admin Email**: 
 - **Admin Password**: 
 - **Google Client ID/Secret**: Available in .
-- **SMTP Credentials**: Available in  (the app password is ).
+- **SMTP Credentials**: Available in  (app password: ).
 
 **What agent forgot to execute**
-- The agent did not circle back to address the critical, long-standing bugs related to the Google Drive integration that were noted in the initial handoff summary. While following the user's immediate requests for new features, this technical debt has been carried over.</analysis>
+- The agent successfully implemented a large number of new features and fixes requested by the user during the session. However, the critical, long-standing bugs related to the Google Drive integration (noted in the initial handoff summary) were not addressed and remain as significant technical debt.</analysis>

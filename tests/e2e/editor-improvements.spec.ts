@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 
-const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://nexus-know.preview.emergentagent.com';
+const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://nexus-platform-36.preview.emergentagent.com';
 
 async function login(page: Page) {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });

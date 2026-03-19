@@ -204,6 +204,56 @@ async def delete_user(user_id: str, current_user: User = Depends(get_current_use
     return {"message": "Benutzer gelöscht"}
 
 
+@router.get("/me/theme")
+async def get_user_theme(current_user: User = Depends(get_current_user)):
+    """Get current user's theme settings."""
+    user_doc = await db.users.find_one(
+        {"user_id": current_user.user_id}, 
+        {"_id": 0, "theme_settings": 1}
+    )
+    return {"theme_settings": user_doc.get("theme_settings") if user_doc else None}
+
+
+@router.put("/me/theme")
+async def update_user_theme(
+    theme_data: Dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Update current user's theme settings."""
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {"theme_settings": theme_data.get("theme_settings", {})}}
+    )
+    return {"message": "Theme-Einstellungen gespeichert"}
+
+
+@router.put("/{user_id}/reset-theme")
+async def reset_user_theme(
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Reset a user's theme to default (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Nur Administratoren können Benutzer-Themes zurücksetzen")
+    
+    # Default theme settings
+    default_theme = {
+        "mode": "light",
+        "colors": {},
+        "darkColors": {}
+    }
+    
+    result = await db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {"theme_settings": default_theme}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    
+    return {"message": "Theme auf Standard zurückgesetzt"}
+
+
 
 @router.get("/search/mention")
 async def search_users_for_mention(q: str = "", limit: int = 8, user: User = Depends(get_current_user)):

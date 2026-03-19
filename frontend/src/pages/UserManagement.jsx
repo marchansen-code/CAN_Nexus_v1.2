@@ -17,7 +17,8 @@ import {
   Trash2,
   Lock,
   Loader2,
-  Clock
+  Clock,
+  Palette
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -210,6 +211,16 @@ const UserManagement = () => {
       toast.error("Passwort konnte nicht geändert werden");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleResetTheme = async (user) => {
+    try {
+      await axios.put(`${API}/users/${user.user_id}/reset-theme`);
+      toast.success(`Theme für ${user.name} auf Standard zurückgesetzt`);
+    } catch (error) {
+      console.error("Failed to reset theme:", error);
+      toast.error("Theme konnte nicht zurückgesetzt werden");
     }
   };
 
@@ -451,6 +462,18 @@ const UserManagement = () => {
                           >
                             <Shield className="w-4 h-4 mr-2" />
                             Rolle
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResetTheme(user)}
+                            disabled={user.user_id === currentUser?.user_id}
+                            className="text-purple-600"
+                            title="Theme auf Standard (Hell) zurücksetzen"
+                            data-testid={`reset-theme-${user.user_id}`}
+                          >
+                            <Palette className="w-4 h-4 mr-2" />
+                            Theme
                           </Button>
                           <Button
                             variant={user.is_blocked ? "outline" : "ghost"}
