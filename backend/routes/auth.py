@@ -63,6 +63,12 @@ async def login(login_data: LoginRequest, response: Response, request: Request):
         max_age=days * 24 * 60 * 60
     )
     
+    # Update last_active timestamp
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"last_active": datetime.now(timezone.utc).isoformat()}}
+    )
+    
     logging.info(f"Successful login from {client_ip} for user: {login_data.email}")
     
     return {
@@ -77,6 +83,11 @@ async def login(login_data: LoginRequest, response: Response, request: Request):
 @router.get("/me")
 async def get_me(user: User = Depends(get_current_user)):
     """Get current authenticated user."""
+    # Update last_active timestamp (fire and forget)
+    await db.users.update_one(
+        {"user_id": user.user_id},
+        {"$set": {"last_active": datetime.now(timezone.utc).isoformat()}}
+    )
     return user.model_dump()
 
 

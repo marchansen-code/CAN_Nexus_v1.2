@@ -163,24 +163,48 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// Droppable Folder Component for Drag & Drop
+// Droppable AND Draggable Folder Component for Drag & Drop
 const DroppableFolder = ({ folder, isSelected, level, hasChildren, isExpanded, onSelect, onToggleExpand, onCreateSubfolder, canEdit, children }) => {
-  const { setNodeRef, isOver } = useDroppable({
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `folder-${folder.folder_id}`,
     data: { type: 'folder', folderId: folder.folder_id }
   });
 
+  const { attributes, listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({
+    id: `drag-folder-${folder.folder_id}`,
+    data: { type: 'folder', folder: folder },
+    disabled: !canEdit
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: isDragging ? 1000 : undefined,
+    opacity: isDragging ? 0.5 : 1,
+  } : undefined;
+
+  // Combine refs
+  const setNodeRef = (node) => {
+    setDropRef(node);
+    setDragRef(node);
+  };
+
   return (
-    <div ref={setNodeRef}>
+    <div ref={setNodeRef} style={style} {...attributes}>
       <div 
         className={cn(
           "flex items-center gap-1 py-1.5 px-2 rounded-md cursor-pointer hover:bg-accent transition-colors group",
           isSelected && "bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-indigo-500",
-          isOver && "bg-indigo-100 dark:bg-indigo-800/30 ring-2 ring-indigo-500"
+          isOver && !isDragging && "bg-indigo-100 dark:bg-indigo-800/30 ring-2 ring-indigo-500",
+          isDragging && "opacity-50"
         )}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
         onClick={() => onSelect(folder.folder_id)}
       >
+        {canEdit && (
+          <div {...listeners} className="cursor-grab active:cursor-grabbing p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <GripVertical className="w-3 h-3 text-muted-foreground" />
+          </div>
+        )}
         {hasChildren ? (
           <button 
             onClick={(e) => { e.stopPropagation(); onToggleExpand(folder.folder_id); }}
@@ -453,6 +477,9 @@ const Documents = () => {
   
   // Drag & Drop state
   const [activeDragItem, setActiveDragItem] = useState(null);
+  const [activeDragType, setActiveDragType] = useState(null); // 'document' or 'folder'
+  const [pendingDrop, setPendingDrop] = useState(null); // { item, targetFolder, type }
+  const [confirmDropDialog, setConfirmDropDialog] = useState(false);
   
   // DnD sensors
   const sensors = useSensors(
@@ -737,41 +764,113 @@ const Documents = () => {
     const { active } = event;
     if (active.data.current?.type === 'document') {
       setActiveDragItem(active.data.current.document);
+      setActiveDragType('document');
+    } else if (active.data.current?.type === 'folder') {
+      setActiveDragItem(active.data.current.folder);
+      setActiveDragType('folder');
     }
   };
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
-    setActiveDragItem(null);
     
-    if (!over || !canEdit) return;
+    if (!over || !canEdit) {
+      setActiveDragItem(null);
+      setActiveDragType(null);
+      return;
+    }
     
     // Check if we dropped on a folder
     if (over.data.current?.type === 'folder') {
       const targetFolderId = over.data.current.folderId;
+      const targetFolder = folders.find(f => f.folder_id === targetFolderId);
+      const targetFolderName = targetFolder?.name || "Alle Dokumente";
       
       // If dragging a document
       if (active.data.current?.type === 'document') {
         const document = active.data.current.document;
         
         // Don't move if already in this folder
-        if (document.folder_id === targetFolderId) return;
-        
-        try {
-          await axios.put(`${API}/documents/${document.document_id}/move`, null, {
-            params: { folder_id: targetFolderId || "" }
-          });
-          toast.success(`"${document.filename}" verschoben`);
-          fetchData();
-        } catch (error) {
-          toast.error("Dokument konnte nicht verschoben werden");
+        if (document.folder_id === targetFolderId) {
+          setActiveDragItem(null);
+          setActiveDragType(null);
+          return;
         }
+        
+        // Show confirmation dialog
+        setPendingDrop({
+          item: document,
+          itemName: document.filename || document.title,
+          targetFolderId,
+          targetFolderName,
+          type: 'document'
+        });
+        setConfirmDropDialog(true);
+      }
+      
+      // If dragging a folder
+      if (active.data.current?.type === 'folder') {
+        const folder = active.data.current.folder;
+        
+        // Don't move if already in this folder or moving to itself
+        if (folder.parent_id === targetFolderId || folder.folder_id === targetFolderId) {
+          setActiveDragItem(null);
+          setActiveDragType(null);
+          return;
+        }
+        
+        // Show confirmation dialog
+        setPendingDrop({
+          item: folder,
+          itemName: folder.name,
+          targetFolderId,
+          targetFolderName,
+          type: 'folder'
+        });
+        setConfirmDropDialog(true);
       }
     }
+    
+    setActiveDragItem(null);
+    setActiveDragType(null);
   };
 
   const handleDragCancel = () => {
     setActiveDragItem(null);
+    setActiveDragType(null);
+  };
+
+  // Confirm and execute the drop
+  const confirmDrop = async () => {
+    if (!pendingDrop) return;
+    
+    const { item, targetFolderId, type } = pendingDrop;
+    
+    try {
+      if (type === 'document') {
+        await axios.put(`${API}/documents/${item.document_id}/move`, null, {
+          params: { folder_id: targetFolderId || "" }
+        });
+        toast.success(`"${item.filename || item.title}" verschoben`);
+      } else if (type === 'folder') {
+        await axios.put(`${API}/document-folders/${item.folder_id}/move`, {
+          target_folder_id: targetFolderId
+        });
+        toast.success(`Ordner "${item.name}" verschoben`);
+      }
+      fetchData();
+    } catch (error) {
+      console.error("Move error:", error);
+      toast.error(error.response?.data?.detail || "Verschieben fehlgeschlagen");
+    } finally {
+      setPendingDrop(null);
+      setConfirmDropDialog(false);
+    }
+  };
+
+  const cancelDrop = () => {
+    setPendingDrop(null);
+    setConfirmDropDialog(false);
   };
 
   const handleUpdateFolder = async () => {
@@ -2007,13 +2106,37 @@ const Documents = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Drag & Drop Confirmation Dialog */}
+      <AlertDialog open={confirmDropDialog} onOpenChange={(open) => !open && cancelDrop()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <MoveRight className="w-5 h-5 text-indigo-500" />
+              Verschieben bestätigen
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie <strong>"{pendingDrop?.itemName}"</strong> wirklich nach{' '}
+              <strong>"{pendingDrop?.targetFolderName}"</strong> verschieben?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDrop}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDrop} className="bg-indigo-600 hover:bg-indigo-700">
+              Verschieben
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
     
     {/* Drag Overlay */}
     <DragOverlay>
       {activeDragItem && (
         <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border-2 border-indigo-500 shadow-lg flex items-center gap-3 min-w-[200px]">
-          {activeDragItem.is_image && activeDragItem.image_id ? (
+          {activeDragType === 'folder' ? (
+            <Folder className="w-5 h-5 text-amber-500" />
+          ) : activeDragItem.is_image && activeDragItem.image_id ? (
             <div className="w-10 h-10 rounded overflow-hidden bg-muted">
               <img 
                 src={`${API}/images/${activeDragItem.image_id}`} 
@@ -2025,7 +2148,7 @@ const Documents = () => {
             <FileText className="w-5 h-5 text-indigo-500" />
           )}
           <span className="text-sm font-medium truncate max-w-[150px]">
-            {activeDragItem.filename || activeDragItem.title}
+            {activeDragType === 'folder' ? activeDragItem.name : (activeDragItem.filename || activeDragItem.title)}
           </span>
         </div>
       )}

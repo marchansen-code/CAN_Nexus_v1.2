@@ -257,6 +257,8 @@ const Articles = () => {
   
   // Drag & Drop state
   const [activeDragItem, setActiveDragItem] = useState(null);
+  const [pendingDrop, setPendingDrop] = useState(null);
+  const [confirmDropDialog, setConfirmDropDialog] = useState(false);
   
   // DnD sensors
   const sensors = useSensors(
@@ -336,13 +338,17 @@ const Articles = () => {
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
-    setActiveDragItem(null);
     
-    if (!over || !canEdit) return;
+    if (!over || !canEdit) {
+      setActiveDragItem(null);
+      return;
+    }
     
     // Check if we dropped on a category
     if (over.data.current?.type === 'category') {
       const targetCategoryId = over.data.current.categoryId;
+      const targetCategory = categories.find(c => c.category_id === targetCategoryId);
+      const targetCategoryName = targetCategory?.name || "Root-Kategorie";
       
       // If dragging an article
       if (active.data.current?.type === 'article') {
@@ -350,15 +356,42 @@ const Articles = () => {
         const currentCategoryIds = article.category_ids || (article.category_id ? [article.category_id] : []);
         
         // Don't move if already in this category
-        if (currentCategoryIds.includes(targetCategoryId)) return;
+        if (currentCategoryIds.includes(targetCategoryId)) {
+          setActiveDragItem(null);
+          return;
+        }
         
-        await handleMoveArticle(article.article_id, targetCategoryId);
+        // Show confirmation dialog
+        setPendingDrop({
+          article,
+          articleTitle: article.title,
+          targetCategoryId,
+          targetCategoryName
+        });
+        setConfirmDropDialog(true);
       }
     }
+    
+    setActiveDragItem(null);
   };
 
   const handleDragCancel = () => {
     setActiveDragItem(null);
+  };
+
+  // Confirm and execute the drop
+  const confirmDrop = async () => {
+    if (!pendingDrop) return;
+    
+    const { article, targetCategoryId } = pendingDrop;
+    await handleMoveArticle(article.article_id, targetCategoryId);
+    setPendingDrop(null);
+    setConfirmDropDialog(false);
+  };
+
+  const cancelDrop = () => {
+    setPendingDrop(null);
+    setConfirmDropDialog(false);
   };
 
   const toggleMoveExpand = (categoryId) => {
@@ -779,6 +812,28 @@ const Articles = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Drag & Drop Confirmation Dialog */}
+      <AlertDialog open={confirmDropDialog} onOpenChange={(open) => !open && cancelDrop()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <MoveRight className="w-5 h-5 text-indigo-500" />
+              Verschieben bestätigen
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie <strong>"{pendingDrop?.articleTitle}"</strong> wirklich nach{' '}
+              <strong>"{pendingDrop?.targetCategoryName}"</strong> verschieben?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDrop}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDrop} className="bg-indigo-600 hover:bg-indigo-700">
+              Verschieben
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
     
     {/* Drag Overlay */}
