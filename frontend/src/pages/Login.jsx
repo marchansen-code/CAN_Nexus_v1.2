@@ -115,9 +115,9 @@ const Login = () => {
         <div className="w-full max-w-4xl grid lg:grid-cols-2 gap-6 items-stretch">
           
           {/* Left Side - Logo & Slogan Card */}
-          <Card className="hidden lg:flex flex-col items-center justify-center border shadow-2xl bg-white/95 backdrop-blur-sm p-8">
+          <Card className="hidden lg:flex flex-col items-center justify-center border-0 bg-white/75 backdrop-blur-sm p-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
             <img 
-              src="/nexus-logo.png" 
+              src="/nexus-logo-transparent.png" 
               alt="CANUSA Nexus" 
               className="h-48 object-contain mb-8"
             />
@@ -136,7 +136,7 @@ const Login = () => {
               </span>
             </div>
             
-            <Card className="border shadow-2xl bg-white/95 backdrop-blur-sm">
+            <Card className="border-0 bg-white/75 backdrop-blur-sm shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
               <CardHeader className="space-y-1 pb-6">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
