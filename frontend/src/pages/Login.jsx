@@ -106,14 +106,12 @@ const Login = () => {
 
       {/* Header */}
       <header className="relative z-10 p-6">
-        <div className="max-w-7xl mx-auto flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
-            <span className="text-white font-bold text-lg">C</span>
-          </div>
-          <div>
-            <span className="font-bold text-xl text-white">CANUSA</span>
-            <span className="text-slate-400 ml-2 text-sm">Nexus</span>
-          </div>
+        <div className="max-w-7xl mx-auto flex items-center">
+          <img 
+            src="/nexus-logo.png" 
+            alt="CANUSA Nexus - The Knowledge Hub" 
+            className="h-14 object-contain brightness-0 invert"
+          />
         </div>
       </header>
 
@@ -124,9 +122,11 @@ const Login = () => {
           {/* Left Side - Branding */}
           <div className="hidden lg:block space-y-8">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-4">
-                The Knowledge Hub
-              </h1>
+              <img 
+                src="/nexus-logo.png" 
+                alt="CANUSA Nexus" 
+                className="h-32 object-contain brightness-0 invert mb-6"
+              />
               <p className="text-lg text-slate-300">
                 Ihre zentrale Wissensplattform für schnellen Zugriff auf alle wichtigen Informationen.
               </p>

@@ -443,7 +443,13 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
   - Login-Seite Branding und Buttons
   - Avatar-Fallback-Farben
   - Kategoriebaum Auswahl
-- ✅ **Theme aus Header entfernt** - Theme-Indikator verlinkt jetzt zu den Einstellungen
+- ✅ **Theme-Button aus Header entfernt** - Nur noch über Einstellungen erreichbar
+- ✅ **Neues CANUSA Nexus Logo** integriert:
+  - Sidebar Logo zentriert
+  - Mobile Header Logo
+  - Login-Seite Header und Hero-Bereich
+  - Landing-Seite Header und Hero-Bereich
+  - Favicon und Apple Touch Icon
 - ✅ **Einstellungen für alle Rollen sichtbar** - Nicht nur Admins können auf Einstellungen zugreifen
 - ✅ **Admin: Theme zurücksetzen** - Neuer "Theme" Button in der Benutzerverwaltung
   - Setzt das Theme eines Benutzers auf Standard (Light Mode) zurück
@@ -454,16 +460,18 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - **Neue/Aktualisierte Komponenten**:
   - `ThemeSettings.jsx` - Erscheinungsbild-Einstellungskomponente
   - `ThemeProvider.jsx` - Erweitert mit Farbschema-Support, CSS-Variablen und Server-Sync
-- **Aktualisierte Seiten** (für dynamische Primärfarben):
-  - `Layout.jsx` - Sidebar-Navigation
+- **Aktualisierte Seiten** (für dynamische Primärfarben und neues Logo):
+  - `Layout.jsx` - Sidebar-Navigation, neues Logo
   - `Dashboard.jsx` - StatCards, Buttons, Avatars
   - `Articles.jsx` - Kategorie-Baum, Buttons
   - `ArticleEditor.jsx` - Kategorie-Checkboxen, Speichern-Button
   - `ArticleView.jsx` - Export-Button
-  - `Login.jsx` - Header, Feature-Icons, Login-Button
-  - `Landing.jsx` - Branding, CTA-Buttons
+  - `Login.jsx` - Neues Logo, Feature-Icons, Login-Button
+  - `Landing.jsx` - Neues Logo, CTA-Buttons
   - `Groups.jsx` - Erstellen/Speichern-Buttons
   - `Backup.jsx` - Alle primären Buttons
+- **Neue Assets**:
+  - `/public/nexus-logo.png` - Das neue CANUSA Nexus Logo
 - **Neue CSS-Utilities**:
   - `bg-theme-primary`, `text-theme-primary`, `border-theme-primary`
   - `bg-theme-primary-light`, `bg-theme-primary-lighter`
