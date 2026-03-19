@@ -287,6 +287,7 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - **Passwort**: CanusaNexus2024!
 
 ## Test Coverage
+- Iteration 26: Backend 100% (12/12), Frontend 100% (13/13), Regression 100% (25/25) - User Last Active & Folder Move
 - Iteration 25: Backend 100% (13/13), Frontend 95% (20/21) - Article Move & Image Upload Tree
 - Iteration 24: Backend 100% (13/13), Frontend 100% (15/15, 1 skipped) - Documents Page Features
 - Iteration 23: Backend 100% (9/9), Frontend 100% (15/15) - Editor Improvements
@@ -337,6 +338,17 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **Bilder-Upload Ordnerauswahl** - Hierarchische Baumstruktur statt flacher Dropdown-Liste
 - ✅ **Expand/Collapse für Ordner** - Pfeile zum Auf-/Zuklappen von Ordnern mit Unterordnern
 - ✅ **Auto-Auswahl "Bilder"** - "Bilder (automatisch)" ist als Standard vorausgewählt
+
+## Benutzer & Sicherheit Verbesserungen (Iteration 27) - 19.03.2026
+- ✅ **Zuletzt online für Admins** - Neue "Zuletzt online" Spalte in der Benutzerverwaltung
+- ✅ **Online-Status Indikator** - Grüner pulsierender Punkt für Benutzer, die in den letzten 5 Minuten aktiv waren
+- ✅ **Relative Zeitangaben** - "Gerade eben", "vor X Min.", "vor X Std.", "vor X Tagen", "Nie"
+- ✅ **last_active Tracking** - Backend aktualisiert last_active bei Login und /me Endpoint-Aufrufen
+- ✅ **Ordner verschieben per Drag & Drop** - Ordner können jetzt auch in andere Ordner gezogen werden
+- ✅ **Ordner verschieben API** - Neuer PUT /api/document-folders/{id}/move Endpoint
+- ✅ **Zirkuläre Referenz Schutz** - Backend verhindert das Verschieben eines Ordners in seinen eigenen Unterordner
+- ✅ **Bestätigungs-Dialog vor Drag & Drop** - "Möchten Sie XYZ wirklich nach ZYX verschieben?"
+- ✅ **Bestätigung für alle Drag & Drop Operationen** - Dokumente, Ordner und Artikel
 
 ## Backlog
 
