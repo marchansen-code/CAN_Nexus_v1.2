@@ -54,7 +54,7 @@ const Sidebar = ({ className = "", onNavigate, userRole }) => {
           <img 
             src="/nexus-logo.png" 
             alt="CANUSA Nexus - The Knowledge Hub" 
-            className="h-16 object-contain"
+            className="h-24 object-contain"
           />
         </div>
       </div>

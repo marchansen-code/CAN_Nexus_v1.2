@@ -21,7 +21,7 @@ const Landing = () => {
               <img 
                 src="/nexus-logo.png" 
                 alt="CANUSA Nexus - The Knowledge Hub" 
-                className="h-12 object-contain"
+                className="h-16 object-contain"
               />
             </div>
             <Button 
@@ -42,7 +42,7 @@ const Landing = () => {
             <img 
               src="/nexus-logo.png" 
               alt="CANUSA Nexus" 
-              className="h-40 object-contain mx-auto mb-8"
+              className="h-56 object-contain mx-auto mb-8"
             />
             <p className="text-xl text-muted-foreground mb-8">
               Internes Wissensmanagement-System für Mitarbeiter der CANUSA Touristik GmbH & Co. KG und CU-Travel.
