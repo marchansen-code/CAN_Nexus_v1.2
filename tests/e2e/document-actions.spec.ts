@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'https://email-hub-27.preview.emergentagent.com';
+const BASE_URL = 'https://nexus-know.preview.emergentagent.com';
 
 test.describe('Document Actions and PDF Import', () => {
   

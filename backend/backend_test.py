@@ -12,7 +12,7 @@ import time
 import uuid
 
 class CanusaAPITester:
-    def __init__(self, base_url="https://email-hub-27.preview.emergentagent.com"):
+    def __init__(self, base_url="https://nexus-know.preview.emergentagent.com"):
         self.base_url = base_url.rstrip('/')
         self.session_token = "test_session_1771581159911"  # From test credentials
         self.headers = {

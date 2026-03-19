@@ -4,6 +4,17 @@ import axios from "axios";
 import { API, AuthContext } from "@/App";
 import { toast } from "sonner";
 import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  useDraggable,
+} from "@dnd-kit/core";
+import {
   Upload,
   FileText,
   Clock,
@@ -33,7 +44,10 @@ import {
   Download,
   ZoomIn,
   Info,
-  LayoutGrid as Grid
+  LayoutGrid as Grid,
+  CheckSquare,
+  Square,
+  GripVertical
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -83,6 +97,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import DocumentViewer, { FileIcon } from "@/components/DocumentViewer";
 import GoogleDriveImportDialog from "@/components/dialogs/GoogleDriveImportDialog";
 import DocumentDriveExportDialog from "@/components/dialogs/DocumentDriveExportDialog";
@@ -148,7 +163,108 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// Folder Tree Component
+// Droppable Folder Component for Drag & Drop
+const DroppableFolder = ({ folder, isSelected, level, hasChildren, isExpanded, onSelect, onToggleExpand, onCreateSubfolder, canEdit, children }) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `folder-${folder.folder_id}`,
+    data: { type: 'folder', folderId: folder.folder_id }
+  });
+
+  return (
+    <div ref={setNodeRef}>
+      <div 
+        className={cn(
+          "flex items-center gap-1 py-1.5 px-2 rounded-md cursor-pointer hover:bg-accent transition-colors group",
+          isSelected && "bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-indigo-500",
+          isOver && "bg-indigo-100 dark:bg-indigo-800/30 ring-2 ring-indigo-500"
+        )}
+        style={{ paddingLeft: `${level * 12 + 8}px` }}
+        onClick={() => onSelect(folder.folder_id)}
+      >
+        {hasChildren ? (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onToggleExpand(folder.folder_id); }}
+            className="p-0.5 hover:bg-muted rounded"
+          >
+            {isExpanded ? (
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+            )}
+          </button>
+        ) : (
+          <span className="w-4" />
+        )}
+        
+        {hasChildren && isExpanded ? (
+          <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" />
+        ) : (
+          <Folder className="w-4 h-4 text-amber-500 shrink-0" />
+        )}
+        
+        <span className="text-sm flex-1 truncate">{folder.name}</span>
+        
+        {canEdit && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onCreateSubfolder(folder.folder_id); }}
+            className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-muted rounded transition-opacity"
+            title="Unterordner erstellen"
+          >
+            <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+};
+
+// Droppable Root Folder
+const DroppableRootFolder = ({ isSelected, onSelect }) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'folder-root',
+    data: { type: 'folder', folderId: null }
+  });
+
+  return (
+    <div 
+      ref={setNodeRef}
+      className={cn(
+        "flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer hover:bg-accent transition-colors",
+        isSelected && "bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-indigo-500",
+        isOver && "bg-indigo-100 dark:bg-indigo-800/30 ring-2 ring-indigo-500"
+      )}
+      onClick={() => onSelect(null)}
+    >
+      <Home className="w-4 h-4 text-slate-500" />
+      <span className="text-sm font-medium">Alle Dokumente</span>
+    </div>
+  );
+};
+
+// Draggable Document Component
+const DraggableDocument = ({ doc, children }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `doc-${doc.document_id}`,
+    data: { type: 'document', document: doc }
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: isDragging ? 1000 : undefined,
+    opacity: isDragging ? 0.5 : 1,
+  } : undefined;
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <div {...listeners} className="cursor-grab active:cursor-grabbing">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// Folder Tree Component with Drag & Drop support
 const FolderTree = ({ folders = [], selectedFolderId, onSelectFolder, onCreateSubfolder, canEdit }) => {
   const [expandedIds, setExpandedIds] = useState([]);
   
@@ -172,55 +288,24 @@ const FolderTree = ({ folders = [], selectedFolderId, onSelectFolder, onCreateSu
     const isSelected = selectedFolderId === folder.folder_id;
     
     return (
-      <div key={folder.folder_id}>
-        <div 
-          className={cn(
-            "flex items-center gap-1 py-1.5 px-2 rounded-md cursor-pointer hover:bg-accent transition-colors group",
-            isSelected && "bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-indigo-500"
-          )}
-          style={{ paddingLeft: `${level * 12 + 8}px` }}
-          onClick={() => onSelectFolder(folder.folder_id)}
-        >
-          {hasChildren ? (
-            <button 
-              onClick={(e) => { e.stopPropagation(); toggleExpand(folder.folder_id); }}
-              className="p-0.5 hover:bg-muted rounded"
-            >
-              {isExpanded ? (
-                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-              )}
-            </button>
-          ) : (
-            <span className="w-4" />
-          )}
-          
-          {hasChildren && isExpanded ? (
-            <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" />
-          ) : (
-            <Folder className="w-4 h-4 text-amber-500 shrink-0" />
-          )}
-          
-          <span className="text-sm flex-1 truncate">{folder.name}</span>
-          
-          {canEdit && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onCreateSubfolder(folder.folder_id); }}
-              className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-muted rounded transition-opacity"
-              title="Unterordner erstellen"
-            >
-              <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          )}
-        </div>
-        
+      <DroppableFolder
+        key={folder.folder_id}
+        folder={folder}
+        isSelected={isSelected}
+        level={level}
+        hasChildren={hasChildren}
+        isExpanded={isExpanded}
+        onSelect={onSelectFolder}
+        onToggleExpand={toggleExpand}
+        onCreateSubfolder={onCreateSubfolder}
+        canEdit={canEdit}
+      >
         {hasChildren && isExpanded && (
           <div>
             {children.map(child => renderFolder(child, level + 1))}
           </div>
         )}
-      </div>
+      </DroppableFolder>
     );
   };
   
@@ -229,16 +314,10 @@ const FolderTree = ({ folders = [], selectedFolderId, onSelectFolder, onCreateSu
   return (
     <div className="space-y-1">
       {/* Root folder option */}
-      <div 
-        className={cn(
-          "flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer hover:bg-accent transition-colors",
-          (selectedFolderId === null || selectedFolderId === "root") && "bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-indigo-500"
-        )}
-        onClick={() => onSelectFolder(null)}
-      >
-        <Home className="w-4 h-4 text-slate-500" />
-        <span className="text-sm font-medium">Alle Dokumente</span>
-      </div>
+      <DroppableRootFolder 
+        isSelected={selectedFolderId === null || selectedFolderId === "root"}
+        onSelect={onSelectFolder}
+      />
       
       <Separator className="my-2" />
       
@@ -366,6 +445,24 @@ const Documents = () => {
   const [sortOrder, setSortOrder] = useState("desc");
   const [viewMode, setViewMode] = useState("list"); // "list" or "gallery"
   const [imageUploadDialog, setImageUploadDialog] = useState(false);
+  
+  // Multi-select state
+  const [selectedDocIds, setSelectedDocIds] = useState(new Set());
+  const [bulkMoveDialog, setBulkMoveDialog] = useState(false);
+  const [bulkDeleteDialog, setBulkDeleteDialog] = useState(false);
+  
+  // Drag & Drop state
+  const [activeDragItem, setActiveDragItem] = useState(null);
+  
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
 
   const isAdmin = user?.role === "admin";
   const canEdit = user?.role === "admin" || user?.role === "editor";
@@ -441,14 +538,6 @@ const Documents = () => {
   const handleDriveImport = (result) => {
     fetchData();
   };
-
-  // Get documents for current folder
-  const filteredDocuments = documents.filter(doc => {
-    if (selectedFolderId === null || selectedFolderId === "root") {
-      return !doc.folder_id;
-    }
-    return doc.folder_id === selectedFolderId;
-  });
 
   // Get current folder name
   const currentFolder = folders.find(f => f.folder_id === selectedFolderId);
@@ -532,9 +621,18 @@ const Documents = () => {
     }
   };
 
-  // Sort documents
+  // Filter documents by selected folder, then sort
   const sortedDocuments = React.useMemo(() => {
-    const sorted = [...documents].sort((a, b) => {
+    // First filter by selected folder
+    const filtered = documents.filter(doc => {
+      if (selectedFolderId === null || selectedFolderId === "root") {
+        return !doc.folder_id;
+      }
+      return doc.folder_id === selectedFolderId;
+    });
+    
+    // Then sort the filtered results
+    const sorted = [...filtered].sort((a, b) => {
       let aVal, bVal;
       switch (sortBy) {
         case "title":
@@ -553,11 +651,128 @@ const Documents = () => {
       }
     });
     return sorted;
-  }, [documents, sortBy, sortOrder]);
+  }, [documents, selectedFolderId, sortBy, sortOrder]);
 
   // Filter images for gallery
   const imageDocuments = sortedDocuments.filter(doc => doc.is_image);
   const nonImageDocuments = sortedDocuments.filter(doc => !doc.is_image);
+
+  // Multi-select helper functions
+  const toggleDocSelection = (docId) => {
+    setSelectedDocIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(docId)) {
+        newSet.delete(docId);
+      } else {
+        newSet.add(docId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllImages = () => {
+    const allImageIds = imageDocuments.map(doc => doc.document_id);
+    setSelectedDocIds(new Set(allImageIds));
+  };
+
+  const clearSelection = () => {
+    setSelectedDocIds(new Set());
+  };
+
+  const isAllImagesSelected = imageDocuments.length > 0 && 
+    imageDocuments.every(doc => selectedDocIds.has(doc.document_id));
+
+  // Bulk actions
+  const handleBulkDownload = async () => {
+    const selectedDocs = documents.filter(doc => selectedDocIds.has(doc.document_id));
+    for (const doc of selectedDocs) {
+      if (doc.image_id) {
+        window.open(`${API}/images/${doc.image_id}`, '_blank');
+      } else {
+        window.open(`${API}/documents/${doc.document_id}/file`, '_blank');
+      }
+    }
+    toast.success(`${selectedDocs.length} Datei(en) zum Download geöffnet`);
+  };
+
+  const handleBulkMove = async () => {
+    if (selectedDocIds.size === 0) return;
+    
+    try {
+      const promises = Array.from(selectedDocIds).map(docId =>
+        axios.put(`${API}/documents/${docId}/move`, null, {
+          params: { folder_id: moveFolderId || "" }
+        })
+      );
+      await Promise.all(promises);
+      toast.success(`${selectedDocIds.size} Dokument(e) verschoben`);
+      fetchData();
+      setSelectedDocIds(new Set());
+      setBulkMoveDialog(false);
+      setMoveFolderId(null);
+    } catch (error) {
+      toast.error("Einige Dokumente konnten nicht verschoben werden");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedDocIds.size === 0) return;
+    
+    try {
+      const promises = Array.from(selectedDocIds).map(docId =>
+        axios.delete(`${API}/documents/${docId}`)
+      );
+      await Promise.all(promises);
+      toast.success(`${selectedDocIds.size} Dokument(e) gelöscht`);
+      fetchData();
+      setSelectedDocIds(new Set());
+      setBulkDeleteDialog(false);
+    } catch (error) {
+      toast.error("Einige Dokumente konnten nicht gelöscht werden");
+    }
+  };
+
+  // Drag & Drop handlers
+  const handleDragStart = (event) => {
+    const { active } = event;
+    if (active.data.current?.type === 'document') {
+      setActiveDragItem(active.data.current.document);
+    }
+  };
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    setActiveDragItem(null);
+    
+    if (!over || !canEdit) return;
+    
+    // Check if we dropped on a folder
+    if (over.data.current?.type === 'folder') {
+      const targetFolderId = over.data.current.folderId;
+      
+      // If dragging a document
+      if (active.data.current?.type === 'document') {
+        const document = active.data.current.document;
+        
+        // Don't move if already in this folder
+        if (document.folder_id === targetFolderId) return;
+        
+        try {
+          await axios.put(`${API}/documents/${document.document_id}/move`, null, {
+            params: { folder_id: targetFolderId || "" }
+          });
+          toast.success(`"${document.filename}" verschoben`);
+          fetchData();
+        } catch (error) {
+          toast.error("Dokument konnte nicht verschoben werden");
+        }
+      }
+    }
+  };
+
+  const handleDragCancel = () => {
+    setActiveDragItem(null);
+  };
 
   const handleUpdateFolder = async () => {
     if (!folderName.trim() || !folderDialog.folder) return;
@@ -677,6 +892,13 @@ const Documents = () => {
   }
 
   return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
     <div className="h-[calc(100vh-8rem)] flex flex-col" data-testid="documents-page">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -783,9 +1005,9 @@ const Documents = () => {
                       <Folder className="w-6 h-6 text-amber-500" />
                       <div>
                         <h2 className="font-semibold">{currentFolder.name}</h2>
-                        {currentFolder.description && (
-                          <p className="text-sm text-muted-foreground">{currentFolder.description}</p>
-                        )}
+                        <p className="text-sm text-muted-foreground">
+                          {currentFolder.description || `${sortedDocuments.length} Dokument${sortedDocuments.length !== 1 ? 'e' : ''}`}
+                        </p>
                       </div>
                       {canEdit && (
                         <DropdownMenu>
@@ -822,7 +1044,7 @@ const Documents = () => {
                       <div>
                         <h2 className="font-semibold">Alle Dokumente</h2>
                         <p className="text-sm text-muted-foreground">
-                          {documents.length} Dokument{documents.length !== 1 ? 'e' : ''} gesamt
+                          {sortedDocuments.length} Dokument{sortedDocuments.length !== 1 ? 'e' : ''} im Stammverzeichnis
                         </p>
                       </div>
                     </>
@@ -969,6 +1191,75 @@ const Documents = () => {
 
           {/* Documents List / Gallery */}
           <Card className="flex-1 flex flex-col min-h-0">
+            {/* Multi-select action bar */}
+            {selectedDocIds.size > 0 && viewMode === "gallery" && (
+              <div className="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-900/20 border-b">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={isAllImagesSelected}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        selectAllImages();
+                      } else {
+                        clearSelection();
+                      }
+                    }}
+                    data-testid="select-all-checkbox"
+                  />
+                  <span className="text-sm font-medium">
+                    {selectedDocIds.size} ausgewählt
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearSelection}
+                    className="text-muted-foreground"
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Auswahl aufheben
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkDownload}
+                    data-testid="bulk-download-btn"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Herunterladen
+                  </Button>
+                  {canEdit && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setBulkMoveDialog(true);
+                          setMoveFolderId(null);
+                        }}
+                        data-testid="bulk-move-btn"
+                      >
+                        <MoveRight className="w-4 h-4 mr-2" />
+                        Verschieben
+                      </Button>
+                      {isAdmin && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setBulkDeleteDialog(true)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          data-testid="bulk-delete-btn"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Löschen
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
             <CardContent className="flex-1 p-0 overflow-auto">
               {sortedDocuments.length > 0 ? (
                 viewMode === "gallery" ? (
@@ -976,21 +1267,64 @@ const Documents = () => {
                   <div className="p-4">
                     {imageDocuments.length > 0 && (
                       <div className="mb-6">
-                        <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                          Bilder ({imageDocuments.length})
-                        </h3>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-medium text-muted-foreground">
+                            Bilder ({imageDocuments.length})
+                          </h3>
+                          {canEdit && imageDocuments.length > 0 && selectedDocIds.size === 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={selectAllImages}
+                              className="text-xs"
+                              data-testid="select-all-btn"
+                            >
+                              <CheckSquare className="w-3.5 h-3.5 mr-1" />
+                              Alle auswählen
+                            </Button>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                          {imageDocuments.map((doc) => (
+                          {imageDocuments.map((doc) => {
+                            const isSelected = selectedDocIds.has(doc.document_id);
+                            return (
                             <div
                               key={doc.document_id}
-                              className="group relative aspect-square rounded-lg overflow-hidden bg-muted border hover:border-primary transition-colors"
+                              className={cn(
+                                "group relative aspect-square rounded-lg overflow-hidden bg-muted border transition-colors",
+                                isSelected 
+                                  ? "border-indigo-500 ring-2 ring-indigo-500/30" 
+                                  : "hover:border-primary"
+                              )}
                               data-testid={`gallery-image-${doc.document_id}`}
                             >
+                              {/* Selection checkbox */}
+                              <div 
+                                className={cn(
+                                  "absolute top-2 left-2 z-10 transition-opacity",
+                                  isSelected || "opacity-0 group-hover:opacity-100"
+                                )}
+                              >
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleDocSelection(doc.document_id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="bg-white/90 border-white/50 data-[state=checked]:bg-indigo-600"
+                                  data-testid={`select-image-${doc.document_id}`}
+                                />
+                              </div>
+                              
                               <img
                                 src={`${API}/images/${doc.image_id}`}
                                 alt={doc.title || doc.filename}
                                 className="w-full h-full object-cover cursor-pointer"
-                                onClick={() => setImagePreview(doc)}
+                                onClick={() => {
+                                  if (selectedDocIds.size > 0) {
+                                    toggleDocSelection(doc.document_id);
+                                  } else {
+                                    setImagePreview(doc);
+                                  }
+                                }}
                               />
                               
                               {/* Hover overlay with actions */}
@@ -1063,7 +1397,8 @@ const Documents = () => {
                                 </p>
                               </div>
                             </div>
-                          ))}
+                          );
+                          })}
                         </div>
                       </div>
                     )}
@@ -1105,13 +1440,16 @@ const Documents = () => {
                   /* List View */
                   <div className="p-4 space-y-3">
                     {sortedDocuments.map((doc) => (
+                      <DraggableDocument key={doc.document_id} doc={doc}>
                       <div
-                        key={doc.document_id}
                         className="p-3 rounded-lg border hover:bg-accent/50 transition-colors"
                         data-testid={`document-item-${doc.document_id}`}
                       >
                         {/* Document Info Row */}
                         <div className="flex items-start gap-3 mb-2">
+                          {canEdit && (
+                            <GripVertical className="w-4 h-4 text-muted-foreground mt-1 cursor-grab active:cursor-grabbing" />
+                          )}
                           <StatusIcon 
                             status={doc.status} 
                             fileType={doc.file_type} 
@@ -1203,6 +1541,7 @@ const Documents = () => {
                           )}
                         </div>
                       </div>
+                      </DraggableDocument>
                     ))}
                   </div>
                 )
@@ -1618,7 +1957,80 @@ const Documents = () => {
           fetchData();
         }}
       />
+
+      {/* Bulk Move Dialog */}
+      <Dialog open={bulkMoveDialog} onOpenChange={(open) => !open && setBulkMoveDialog(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDocIds.size} Dokument{selectedDocIds.size !== 1 ? 'e' : ''} verschieben
+            </DialogTitle>
+            <DialogDescription>
+              Wählen Sie den Zielordner für die ausgewählten Dokumente.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <FolderSelector 
+            folders={folders}
+            selectedId={moveFolderId}
+            onSelect={setMoveFolderId}
+          />
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkMoveDialog(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleBulkMove} className="bg-indigo-600 hover:bg-indigo-700">
+              Verschieben
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Dialog */}
+      <AlertDialog open={bulkDeleteDialog} onOpenChange={(open) => !open && setBulkDeleteDialog(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {selectedDocIds.size} Dokument{selectedDocIds.size !== 1 ? 'e' : ''} löschen?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Die ausgewählten Dokumente werden in den Papierkorb verschoben.
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700">
+              {selectedDocIds.size} Dokument{selectedDocIds.size !== 1 ? 'e' : ''} löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+    
+    {/* Drag Overlay */}
+    <DragOverlay>
+      {activeDragItem && (
+        <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border-2 border-indigo-500 shadow-lg flex items-center gap-3 min-w-[200px]">
+          {activeDragItem.is_image && activeDragItem.image_id ? (
+            <div className="w-10 h-10 rounded overflow-hidden bg-muted">
+              <img 
+                src={`${API}/images/${activeDragItem.image_id}`} 
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <FileText className="w-5 h-5 text-indigo-500" />
+          )}
+          <span className="text-sm font-medium truncate max-w-[150px]">
+            {activeDragItem.filename || activeDragItem.title}
+          </span>
+        </div>
+      )}
+    </DragOverlay>
+    </DndContext>
   );
 };
 

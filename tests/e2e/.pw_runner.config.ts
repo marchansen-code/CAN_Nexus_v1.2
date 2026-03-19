@@ -2,16 +2,16 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: '/app/tests/e2e',
-  outputDir: '/root/.emergent/automation_output/20260319_074505/test-results',
+  outputDir: '/root/.emergent/automation_output/20260319_095842/test-results',
   timeout: 60000,
   retries: 0,
   workers: 1,
   reporter: [
     ['line'],
-    ['json', { outputFile: '/root/.emergent/automation_output/20260319_074505/results.json' }],
+    ['json', { outputFile: '/root/.emergent/automation_output/20260319_095842/results.json' }],
   ],
   use: {
-    baseURL: 'https://email-hub-27.preview.emergentagent.com',
+    baseURL: 'https://nexus-know.preview.emergentagent.com',
     screenshot: 'only-on-failure',
     trace: 'off',
     headless: true,

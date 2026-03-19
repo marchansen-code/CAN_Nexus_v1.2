@@ -4,7 +4,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://email-hub-27.preview.emergentagent.com';
+const BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://nexus-know.preview.emergentagent.com';
 
 test.describe('Multi-format Document Support', () => {
   // Login before each test

@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class BackendAPITester:
-    def __init__(self, base_url="https://email-hub-27.preview.emergentagent.com"):
+    def __init__(self, base_url="https://nexus-know.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_base = f"{base_url}/api"
         self.session_token = None
