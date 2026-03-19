@@ -287,6 +287,7 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - **Passwort**: CanusaNexus2024!
 
 ## Test Coverage
+- Iteration 27: Frontend 100% (8/8), Regression 100% (8/9) - YouTube & Link Dialog Features
 - Iteration 26: Backend 100% (12/12), Frontend 100% (13/13), Regression 100% (25/25) - User Last Active & Folder Move
 - Iteration 25: Backend 100% (13/13), Frontend 95% (20/21) - Article Move & Image Upload Tree
 - Iteration 24: Backend 100% (13/13), Frontend 100% (15/15, 1 skipped) - Documents Page Features
@@ -349,6 +350,16 @@ Wissensmanagement-Plattform für CANUSA Touristik GmbH & Co. KG und CU-Travel.
 - ✅ **Zirkuläre Referenz Schutz** - Backend verhindert das Verschieben eines Ordners in seinen eigenen Unterordner
 - ✅ **Bestätigungs-Dialog vor Drag & Drop** - "Möchten Sie XYZ wirklich nach ZYX verschieben?"
 - ✅ **Bestätigung für alle Drag & Drop Operationen** - Dokumente, Ordner und Artikel
+
+## Editor Erweiterungen (Iteration 28) - 19.03.2026
+- ✅ **YouTube-Link Dialog** - Beim Einfügen eines YouTube-Videos wird gefragt: "Vorschau einbetten" oder "Nur als Link anzeigen"
+- ✅ **Erweiterte Link-Funktion** - Link-Dialog mit zwei Tabs: "URL" und "Dokument"
+- ✅ **Dokument-Verlinkung** - Durchsuchbare Liste mit Thumbnails für Bilder
+- ✅ **Darstellungs-Optionen** - Bei Dokumenten-Links ohne markierten Text: Vorschaubild, Eigener Link-Text, Gekürzter Dateiname
+- ✅ **Dokument-Vorschau Popup** - Klick auf Dokument-Link öffnet Vollbild-Vorschau
+- ✅ **Bilder-Vorschau** - Zeigt Bild zentriert im Dialog
+- ✅ **PDF/Dokument-Vorschau** - Zeigt Dokument in iframe
+- ✅ **"In neuem Tab öffnen" Button** - Ermöglicht direkten Download/Ansicht
 
 ## Backlog
 
